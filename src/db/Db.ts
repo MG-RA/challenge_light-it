@@ -26,9 +26,17 @@ export class Db {
     return rows[0];
   }
 
+  /** Like `one`, but a missing row fails with `description` instead of a later TypeError. */
+  async oneOrThrow<T extends QueryResultRow>(description: string, sql: string, params: unknown[] = []): Promise<T> {
+    const row = await this.one<T>(sql, params);
+    if (!row) throw new Error(`Expected a row in the DB: ${description}`);
+    return row;
+  }
+
   // --- Common lookups ---
   userByEmail(email: string) {
-    return this.one<{ id: number; email: string; first_name: string; last_name: string; phone: string | null; notes: string | null }>(
+    return this.oneOrThrow<{ id: number; email: string; first_name: string; last_name: string; phone: string | null; notes: string | null }>(
+      `user with email ${email}`,
       'select id, email, first_name, last_name, phone, notes from users where email = $1',
       [email],
     );

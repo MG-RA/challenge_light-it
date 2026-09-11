@@ -12,11 +12,10 @@ test.describe('Users API', () => {
     expect(me).not.toHaveProperty('password_hash');
 
     const dbUser = await db.userByEmail(env.user.email);
-    expect(dbUser, 'user exists in DB').toBeDefined();
     expect(me).toMatchObject({
-      id: dbUser!.id,
-      first_name: dbUser!.first_name,
-      last_name: dbUser!.last_name,
+      id: dbUser.id,
+      first_name: dbUser.first_name,
+      last_name: dbUser.last_name,
     });
   });
 });

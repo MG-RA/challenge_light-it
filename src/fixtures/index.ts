@@ -45,8 +45,12 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     await ctx.dispose();
   },
 
-  api: async ({ anonApi, token }, use) => {
-    await use(anonApi.withToken(token));
+  // Its own context rather than anonApi's: request contexts keep a cookie jar,
+  // so sharing one could leave the "anonymous" client authenticated.
+  api: async ({ playwright, token }, use) => {
+    const ctx = await playwright.request.newContext({ baseURL: env.apiBaseUrl });
+    await use(new ApiClient(ctx, token));
+    await ctx.dispose();
   },
 
   loginPage: async ({ page }, use) => {

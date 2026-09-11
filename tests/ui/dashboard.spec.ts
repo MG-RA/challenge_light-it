@@ -8,7 +8,7 @@ test.describe('Dashboard', () => {
 
   test('greets the user by first name from the DB', async ({ dashboardPage, db }) => {
     const user = await db.userByEmail(env.user.email);
-    await expect(dashboardPage.greeting).toContainText(user!.first_name);
+    await expect(dashboardPage.greeting).toContainText(user.first_name);
   });
 
   test('sidebar navigation links are present', async ({ dashboardPage }) => {

@@ -10,6 +10,8 @@ End-to-end checks for the **MedAppoint** medical appointment system across three
 
 ## Setup
 
+Requires Node 26+ (see `.nvmrc`).
+
 ```bash
 npm install
 npx playwright install chromium
