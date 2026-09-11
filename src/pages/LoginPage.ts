@@ -7,10 +7,10 @@ export class LoginPage {
   readonly submitButton: Locator;
 
   constructor(private readonly page: Page) {
-    this.heading = page.getByRole('heading', { name: 'MedAppoint' });
-    this.emailInput = page.getByLabel('Email');
-    this.passwordInput = page.getByLabel('Password');
-    this.submitButton = page.getByRole('button', { name: 'Sign In' });
+    this.heading = page.getByRole('heading', { name: 'MedAppoint' }).describe('Login heading');
+    this.emailInput = page.getByLabel('Email').describe('Email input');
+    this.passwordInput = page.getByLabel('Password').describe('Password input');
+    this.submitButton = page.getByRole('button', { name: 'Sign In' }).describe('Sign In button');
   }
 
   async goto(): Promise<void> {

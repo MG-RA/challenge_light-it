@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "oxc", "import"],
+  "jsPlugins": ["eslint-plugin-playwright"],
+  "options": { "typeAware": true },
+  "categories": { "correctness": "error" },
+  "ignorePatterns": ["playwright-report/**", "test-results/**"],
+  "rules": {
+    // Playwright fixtures must destructure their first param, even when empty: `async ({}, use) => ...`
+    "no-empty-pattern": "off",
+    "typescript/no-floating-promises": "error",
+    "typescript/await-thenable": "error",
+    "typescript/no-misused-promises": "error",
+    "playwright/missing-playwright-await": ["error", { "customMatchers": ["toHaveStatus"] }],
+    "playwright/no-focused-test": "error",
+    "playwright/no-skipped-test": "warn",
+    "playwright/no-page-pause": "error",
+    "playwright/no-wait-for-timeout": "error",
+    "playwright/no-networkidle": "error",
+    "playwright/no-useless-await": "error",
+    "playwright/prefer-web-first-assertions": "error",
+    "playwright/valid-expect": "error",
+    "playwright/valid-title": "error",
+    "playwright/no-standalone-expect": "error"
+  }
+}

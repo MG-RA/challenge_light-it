@@ -5,9 +5,10 @@ import { env } from '../../src/config/env';
 test.describe('Users API', () => {
   test('GET /users/me returns the logged-in user, matching the DB', async ({ api, db }) => {
     const res = await api.getMe();
-    expect(res.status()).toBe(200);
+    await expect(res).toHaveStatus(200);
     const me = (await res.json()) as User;
 
+    expect(me).toMatchSchema('User');
     expect(me.email).toBe(env.user.email);
     expect(me).not.toHaveProperty('password_hash');
 

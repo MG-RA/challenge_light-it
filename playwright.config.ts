@@ -9,7 +9,13 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   // Shared remote env + rate-limited login: keep concurrency modest.
   workers: process.env.CI ? 2 : 4,
-  reporter: [['list'], ['html', { open: 'never' }]],
+  reporter: [
+    ['list'],
+    ['html', { open: 'never' }],
+    ...(process.env.CI
+      ? ([['junit', { outputFile: 'test-results/junit.xml' }], ['github']] as const)
+      : []),
+  ],
   timeout: 30_000,
   expect: { timeout: 7_000 },
 

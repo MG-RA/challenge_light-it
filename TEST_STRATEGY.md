@@ -107,7 +107,7 @@ also touch. Rules the suite follows:
 
 ## 8. CI/CD & reporting
 
-- **GitHub Actions**: `npm ci` → `npx playwright install --with-deps chromium` → typecheck → `npx playwright test`.
+- **GitHub Actions**: `npm ci` → typecheck → lint → `npx playwright install --with-deps chromium` → `npx playwright test`.
 - **Secrets** (credentials, DB) injected as GitHub Secrets, never committed.
 - **Parallelism** tuned down (`workers: 2` in CI) because the target is a shared remote env and login is throttled.
 - **Retries: 1 in CI only** — surfaces flake without masking real failures; `trace/video/screenshot` retained on failure.

@@ -1,9 +1,38 @@
-import { Pool, types, type QueryResultRow } from 'pg';
+import { Pool, TypeOverrides, types, type QueryResultRow } from 'pg';
 import { env } from '../config/env';
 
 // Keep `date` columns as 'YYYY-MM-DD' strings (pg's default Date conversion
 // shifts by local timezone, which makes date comparisons with the API flaky).
-types.setTypeParser(types.builtins.DATE, (value) => value);
+// Scoped to this pool rather than pg's global parser registry.
+const typeOverrides = new TypeOverrides();
+typeOverrides.setTypeParser(types.builtins.DATE, (value) => value);
+
+// Row shapes as stored. Deliberately separate from src/api/types.ts: those model
+// what the spec claims, while the DB is the oracle they get checked against.
+export interface UserRow {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone: string | null;
+  notes: string | null;
+}
+
+export interface AppointmentRow {
+  id: number;
+  doctor_id: number;
+  appointment_date: string;
+  time_slot: string;
+  status: string;
+}
+
+export interface DoctorRow {
+  id: number;
+  first_name: string;
+  last_name: string;
+  specialty: string;
+  consultation_fee: string;
+}
 
 /**
  * Read-only access to the backing Postgres (Supabase pooler, transaction mode).
@@ -12,7 +41,11 @@ types.setTypeParser(types.builtins.DATE, (value) => value);
 export class Db {
   private readonly pool = new Pool({
     ...env.db,
+    // The server cert chains to Supabase's own root CA, so default verification
+    // fails (SELF_SIGNED_CERT_IN_CHAIN). Accepted for a read-only test DB; to
+    // verify, pass `ca` with the root cert from the project's Database settings.
     ssl: { rejectUnauthorized: false },
+    types: typeOverrides,
     max: 2,
   });
 
@@ -35,7 +68,7 @@ export class Db {
 
   // --- Common lookups ---
   userByEmail(email: string) {
-    return this.oneOrThrow<{ id: number; email: string; first_name: string; last_name: string; phone: string | null; notes: string | null }>(
+    return this.oneOrThrow<UserRow>(
       `user with email ${email}`,
       'select id, email, first_name, last_name, phone, notes from users where email = $1',
       [email],
@@ -43,16 +76,22 @@ export class Db {
   }
 
   appointmentsForPatient(patientId: number) {
-    return this.query<{ id: number; doctor_id: number; appointment_date: string; time_slot: string; status: string }>(
+    return this.query<AppointmentRow>(
       'select id, doctor_id, appointment_date, time_slot, status from appointments where patient_id = $1 order by appointment_date, time_slot',
       [patientId],
     );
   }
 
   activeDoctors() {
-    return this.query<{ id: number; first_name: string; last_name: string; specialty: string; consultation_fee: string }>(
+    return this.query<DoctorRow>(
       'select id, first_name, last_name, specialty, consultation_fee from doctors where is_active order by id',
     );
+  }
+
+  /** An id no doctor has, for not-found checks. */
+  async unusedDoctorId(): Promise<number> {
+    const { id } = await this.oneOrThrow<{ id: number }>('next doctor id', 'select coalesce(max(id), 0)::int + 1 as id from doctors');
+    return id;
   }
 
   close(): Promise<void> {

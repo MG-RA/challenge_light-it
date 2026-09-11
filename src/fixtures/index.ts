@@ -1,10 +1,11 @@
 import fs from 'node:fs';
-import { test as base, expect } from '@playwright/test';
+import { test as base } from '@playwright/test';
 import { ApiClient } from '../api/ApiClient';
 import { env } from '../config/env';
 import { Db } from '../db/Db';
 import { DashboardPage } from '../pages/DashboardPage';
 import { LoginPage } from '../pages/LoginPage';
+import { expect } from './matchers';
 import { AUTH_TOKEN_FILE } from './paths';
 
 type TestFixtures = {
@@ -24,6 +25,9 @@ type WorkerFixtures = {
 export const test = base.extend<TestFixtures, WorkerFixtures>({
   token: [
     async ({}, use) => {
+      if (!fs.existsSync(AUTH_TOKEN_FILE)) {
+        throw new Error(`No auth token at ${AUTH_TOKEN_FILE}. Run the "setup" project first (don't pass --no-deps).`);
+      }
       const { token } = JSON.parse(fs.readFileSync(AUTH_TOKEN_FILE, 'utf8')) as { token: string };
       await use(token);
     },

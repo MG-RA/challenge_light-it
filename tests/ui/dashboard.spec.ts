@@ -11,9 +11,18 @@ test.describe('Dashboard', () => {
     await expect(dashboardPage.greeting).toContainText(user.first_name);
   });
 
-  test('sidebar navigation links are present', async ({ dashboardPage }) => {
-    for (const name of ['Dashboard', 'Doctors', 'Appointments', 'Notifications'] as const) {
-      await expect(dashboardPage.navLink(name)).toBeVisible();
-    }
+  test('sidebar navigation links to each section', async ({ dashboardPage }) => {
+    // Link names include the icon ligature text (e.g. "medical_services Doctors"), hence the regexes.
+    await expect(dashboardPage.nav).toMatchAriaSnapshot(`
+      - navigation:
+        - link /Dashboard$/:
+          - /url: /dashboard
+        - link /Doctors$/:
+          - /url: /doctors
+        - link /Appointments$/:
+          - /url: /appointments
+        - link /Notifications$/:
+          - /url: /notifications
+    `);
   });
 });
