@@ -1,10 +1,11 @@
-import { test, expect } from '../../src/fixtures';
+import { test, expect, expectJson } from '../../src/fixtures';
 import type { Doctor } from '../../src/api/types';
 
 test.describe('Doctors API', () => {
   test('GET /doctors lists exactly the active doctors in the DB', async ({ api, db }) => {
     const res = await api.listDoctors();
     await expect(res).toHaveStatus(200);
+    // Cast rather than expectJson: the list fails the Doctor schema until F-01 is fixed.
     const doctors = (await res.json()) as Doctor[];
 
     const dbActive = await db.activeDoctors();
@@ -17,10 +18,7 @@ test.describe('Doctors API', () => {
     'GET /doctors items match the Doctor schema from the spec',
     { annotation: { type: 'issue', description: 'F-01: list omits is_active & consultation_fee (docs/FINDINGS.md)' } },
     async ({ api }) => {
-      const res = await api.listDoctors();
-      await expect(res).toHaveStatus(200);
-      const body: unknown = await res.json();
-      expect(body).toMatchSchema('Doctor[]');
+      await expectJson(await api.listDoctors(), 200, 'Doctor[]');
     },
   );
 

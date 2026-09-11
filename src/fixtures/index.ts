@@ -1,12 +1,16 @@
-import fs from 'node:fs';
-import { test as base } from '@playwright/test';
+import { test as base, type PlaywrightWorkerArgs } from '@playwright/test';
 import { ApiClient } from '../api/ApiClient';
+import { loadToken } from '../auth/session';
 import { env } from '../config/env';
-import { Db } from '../db/Db';
+import { Db, type UserRow } from '../db/Db';
 import { DashboardPage } from '../pages/DashboardPage';
 import { LoginPage } from '../pages/LoginPage';
 import { expect } from './matchers';
-import { AUTH_TOKEN_FILE } from './paths';
+
+export type TestOptions = {
+  /** Backend API base URL. A project can override it with `use: { apiBaseURL }`. */
+  apiBaseURL: string;
+};
 
 type TestFixtures = {
   /** API client with no credentials (for auth/negative tests). */
@@ -18,44 +22,67 @@ type TestFixtures = {
 };
 
 type WorkerFixtures = {
+  /**
+   * Login for the challenge account. One account shared by all workers today;
+   * per-worker accounts (keyed on workerInfo.parallelIndex) would slot in here.
+   */
+  credentials: { email: string; password: string };
+  /** The challenge account's row in the DB. */
+  testUser: UserRow;
   token: string;
   db: Db;
 };
 
-export const test = base.extend<TestFixtures, WorkerFixtures>({
+// Each client gets its own request context: contexts keep a cookie jar, so
+// sharing one could leave the "anonymous" client authenticated.
+async function provideApiClient(
+  playwright: PlaywrightWorkerArgs['playwright'],
+  baseURL: string,
+  token: string | undefined,
+  use: (client: ApiClient) => Promise<void>,
+): Promise<void> {
+  const ctx = await playwright.request.newContext({ baseURL });
+  await use(new ApiClient(ctx, token));
+  await ctx.dispose();
+}
+
+export const test = base.extend<TestOptions & TestFixtures, WorkerFixtures>({
+  apiBaseURL: [env.apiBaseUrl, { option: true }],
+
+  credentials: [
+    async ({}, use) => {
+      const { email, password } = env.user;
+      await use({ email, password });
+    },
+    { scope: 'worker' },
+  ],
+
+  testUser: [
+    async ({ db, credentials }, use) => {
+      await use(await db.userByEmail(credentials.email));
+    },
+    { scope: 'worker' },
+  ],
+
   token: [
     async ({}, use) => {
-      if (!fs.existsSync(AUTH_TOKEN_FILE)) {
-        throw new Error(`No auth token at ${AUTH_TOKEN_FILE}. Run the "setup" project first (don't pass --no-deps).`);
-      }
-      const { token } = JSON.parse(fs.readFileSync(AUTH_TOKEN_FILE, 'utf8')) as { token: string };
-      await use(token);
+      await use(loadToken());
     },
     { scope: 'worker' },
   ],
 
   db: [
     async ({}, use) => {
-      const db = new Db();
+      const db = new Db(env.db);
       await use(db);
       await db.close();
     },
     { scope: 'worker' },
   ],
 
-  anonApi: async ({ playwright }, use) => {
-    const ctx = await playwright.request.newContext({ baseURL: env.apiBaseUrl });
-    await use(new ApiClient(ctx));
-    await ctx.dispose();
-  },
+  anonApi: ({ playwright, apiBaseURL }, use) => provideApiClient(playwright, apiBaseURL, undefined, use),
 
-  // Its own context rather than anonApi's: request contexts keep a cookie jar,
-  // so sharing one could leave the "anonymous" client authenticated.
-  api: async ({ playwright, token }, use) => {
-    const ctx = await playwright.request.newContext({ baseURL: env.apiBaseUrl });
-    await use(new ApiClient(ctx, token));
-    await ctx.dispose();
-  },
+  api: ({ playwright, apiBaseURL, token }, use) => provideApiClient(playwright, apiBaseURL, token, use),
 
   loginPage: async ({ page }, use) => {
     await use(new LoginPage(page));
@@ -67,3 +94,4 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
 });
 
 export { expect };
+export { expectJson } from './expectJson';

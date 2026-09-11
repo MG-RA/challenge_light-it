@@ -1,19 +1,17 @@
 import { test, expect } from '../../src/fixtures';
-import { env } from '../../src/config/env';
 
 test.describe('Dashboard', () => {
   test.beforeEach(async ({ dashboardPage }) => {
     await dashboardPage.goto();
   });
 
-  test('greets the user by first name from the DB', async ({ dashboardPage, db }) => {
-    const user = await db.userByEmail(env.user.email);
-    await expect(dashboardPage.greeting).toContainText(user.first_name);
+  test('greets the user by first name from the DB', async ({ dashboardPage, testUser }) => {
+    await expect(dashboardPage.greeting).toContainText(testUser.first_name);
   });
 
   test('sidebar navigation links to each section', async ({ dashboardPage }) => {
     // Link names include the icon ligature text (e.g. "medical_services Doctors"), hence the regexes.
-    await expect(dashboardPage.nav).toMatchAriaSnapshot(`
+    await expect(dashboardPage.sidebar.nav).toMatchAriaSnapshot(`
       - navigation:
         - link /Dashboard$/:
           - /url: /dashboard

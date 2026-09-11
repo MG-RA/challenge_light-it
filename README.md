@@ -37,13 +37,15 @@ npm run lint           # oxlint, type-aware + eslint-plugin-playwright
 ```
 src/
   config/env.ts        typed, validated env vars
+  auth/session.ts      where the JWT is saved/loaded (.auth/), incl. the SPA's localStorage format
   api/ApiClient.ts     one method per endpoint, returns raw APIResponse
   api/types.ts         models from the OpenAPI spec (what the spec *claims*)
   api/contract.ts      Ajv validation against docs/openapi.json (all listed fields required, no extras)
   db/Db.ts             read-only pg pool + common lookups (DB = source of truth)
-  pages/               page objects
-  fixtures/            test.extend: api, anonApi, db, page objects
+  pages/               page objects; pages/components/ for shared parts (Sidebar), composed not inherited
+  fixtures/            test.extend: api, anonApi, db, credentials, testUser, page objects, apiBaseURL option
   fixtures/matchers.ts expect.extend: toHaveStatus (shows body on failure), toMatchSchema
+  fixtures/expectJson  status + schema check, returns the body typed from the schema
 tests/
   auth.setup.ts        logs in once via API → .auth/token.json + .auth/user.json
   api/ ui/ db/

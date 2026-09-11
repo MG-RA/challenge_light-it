@@ -1,9 +1,8 @@
 import { test, expect } from '../../src/fixtures';
-import { env } from '../../src/config/env';
 
 test.describe('Auth API', () => {
-  test('rejects wrong password with 401', async ({ anonApi }) => {
-    const res = await anonApi.login({ email: env.user.email, password: 'definitely-wrong' });
+  test('rejects wrong password with 401', async ({ anonApi, credentials }) => {
+    const res = await anonApi.login({ email: credentials.email, password: 'definitely-wrong' });
     await expect(res).toHaveStatus(401);
   });
 

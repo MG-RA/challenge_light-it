@@ -1,8 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
+import { AUTH_STATE_FILE } from './src/auth/session';
 import { env } from './src/config/env';
-import { AUTH_STATE_FILE } from './src/fixtures/paths';
+import type { TestOptions } from './src/fixtures';
 
-export default defineConfig({
+export default defineConfig<TestOptions>({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -29,9 +30,9 @@ export default defineConfig({
   projects: [
     { name: 'setup', testMatch: /auth\.setup\.ts/ },
     {
+      // API clients come from fixtures, which use the `apiBaseURL` option (defaults to API_BASE_URL).
       name: 'api',
       testDir: './tests/api',
-      use: { baseURL: env.apiBaseUrl },
       dependencies: ['setup'],
     },
     {

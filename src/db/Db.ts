@@ -1,5 +1,6 @@
-import { Pool, TypeOverrides, types, type QueryResultRow } from 'pg';
-import { env } from '../config/env';
+import { Pool, TypeOverrides, types, type PoolConfig, type QueryResultRow } from 'pg';
+
+export type DbConfig = Pick<PoolConfig, 'host' | 'port' | 'database' | 'user' | 'password'>;
 
 // Keep `date` columns as 'YYYY-MM-DD' strings (pg's default Date conversion
 // shifts by local timezone, which makes date comparisons with the API flaky).
@@ -39,15 +40,19 @@ export interface DoctorRow {
  * Used as the source of truth to verify what the API and UI report.
  */
 export class Db {
-  private readonly pool = new Pool({
-    ...env.db,
-    // The server cert chains to Supabase's own root CA, so default verification
-    // fails (SELF_SIGNED_CERT_IN_CHAIN). Accepted for a read-only test DB; to
-    // verify, pass `ca` with the root cert from the project's Database settings.
-    ssl: { rejectUnauthorized: false },
-    types: typeOverrides,
-    max: 2,
-  });
+  private readonly pool: Pool;
+
+  constructor(config: DbConfig) {
+    this.pool = new Pool({
+      ...config,
+      // The server cert chains to Supabase's own root CA, so default verification
+      // fails (SELF_SIGNED_CERT_IN_CHAIN). Accepted for a read-only test DB; to
+      // verify, pass `ca` with the root cert from the project's Database settings.
+      ssl: { rejectUnauthorized: false },
+      types: typeOverrides,
+      max: 2,
+    });
+  }
 
   async query<T extends QueryResultRow>(sql: string, params: unknown[] = []): Promise<T[]> {
     const { rows } = await this.pool.query<T>(sql, params);
