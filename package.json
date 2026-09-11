@@ -1,0 +1,27 @@
+{
+  "name": "challengelight-it",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright (TypeScript) test suite for the Light-it QA challenge: UI, API and DB checks",
+  "type": "commonjs",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --project=ui",
+    "test:api": "playwright test --project=api",
+    "test:db": "playwright test --project=db",
+    "test:headed": "playwright test --project=ui --headed",
+    "test:debug": "playwright test --debug",
+    "pw:ui": "playwright test --ui",
+    "report": "playwright show-report",
+    "codegen": "playwright codegen https://light-it-qa-challenge.vercel.app/login",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.20.2",
+    "@types/pg": "^8.23.1",
+    "dotenv": "^17.4.2",
+    "pg": "^8.23.0",
+    "typescript": "^7.0.2"
+  }
+}
