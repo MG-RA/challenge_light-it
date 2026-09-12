@@ -1,8 +1,8 @@
-import { test, expect, expectJson } from '../../src/fixtures';
+import { test, expect, expectCompleteJson } from '../../src/fixtures';
 
 test.describe('Users API', () => {
   test('GET /users/me returns the logged-in user, matching the DB', async ({ api, testUser }) => {
-    const me = await expectJson(await api.getMe(), 200, 'User');
+    const me = await expectCompleteJson(await api.getMe(), 200, 'User');
 
     expect(me).not.toHaveProperty('password_hash');
     expect(me).toMatchObject({

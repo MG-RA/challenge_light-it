@@ -1,5 +1,5 @@
-// Mirrors components.schemas in docs/openapi.json. These describe what the spec
-// *claims*; tests should assert on real responses, not assume these are accurate.
+// Complete models used only after literal schema + field-completeness validation.
+// The raw OpenAPI component properties are optional; SpecData models that distinction.
 
 export interface User {
   id: number;

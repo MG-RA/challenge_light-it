@@ -94,4 +94,4 @@ export const test = base.extend<TestOptions & TestFixtures, WorkerFixtures>({
 });
 
 export { expect };
-export { expectJson } from './expectJson';
+export { expectJson, expectCompleteJson } from './expectJson';

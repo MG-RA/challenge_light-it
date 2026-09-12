@@ -13,7 +13,7 @@
     "typescript/no-misused-promises": "error",
     "playwright/missing-playwright-await": ["error", { "customMatchers": ["toHaveStatus"] }],
     "playwright/no-focused-test": "error",
-    "playwright/no-skipped-test": "warn",
+    "playwright/no-skipped-test": ["warn", { "allowConditional": true }],
     "playwright/no-page-pause": "error",
     "playwright/no-wait-for-timeout": "error",
     "playwright/no-networkidle": "error",

@@ -15,9 +15,11 @@ test.describe('Login page', () => {
   });
 
   test('invalid password keeps the user on /login', async ({ page, loginPage, credentials }) => {
-    await loginPage.login(credentials.email, 'definitely-wrong');
+    const response = await loginPage.loginAndWaitForResponse(credentials.email, 'definitely-wrong');
+    expect(response.status()).toBe(401);
+    await expect(loginPage.errorMessage).toBeVisible();
+    await expect(loginPage.submitButton).toBeEnabled();
     await expect(page).toHaveURL(/\/login$/);
-    // TODO: assert on the error message once its copy/role is known
   });
 });
 

@@ -25,16 +25,20 @@ export type SchemaData<R extends SchemaRef> = R extends `${infer N extends Schem
     ? SchemaTypes[R]
     : never;
 
+/** Raw component schemas do not require properties; literal validation cannot promise full models. */
+export type SpecData<R extends SchemaRef> = R extends `${infer N extends SchemaName}[]`
+  ? Partial<SchemaTypes[N]>[]
+  : R extends SchemaName
+    ? Partial<SchemaTypes[R]>
+    : never;
+
 // `example` is an OpenAPI annotation Ajv doesn't know; `nullable` it supports natively.
 const ajv = new Ajv({ allErrors: true, keywords: ['example'] });
 addFormats(ajv);
 
-// The spec lists each schema's fields but never marks them `required`, so as
-// written it would accept a response missing every field. Treat the listed
-// fields as the contract instead: all present, nothing extra (nullable fields
-// must still be present, as null).
+// Preserve the published contract, including its optional properties and allowance for extras.
 for (const [name, schema] of Object.entries(spec.components.schemas)) {
-  ajv.addSchema({ ...schema, required: Object.keys(schema.properties), additionalProperties: false }, name);
+  ajv.addSchema(schema, name);
 }
 
 const validators = new Map<SchemaRef, ValidateFunction>();
@@ -61,4 +65,15 @@ function formatError(e: ErrorObject): string {
 export function schemaErrors(ref: SchemaRef, data: unknown): string[] {
   const validate = validatorFor(ref);
   return validate(data) ? [] : (validate.errors ?? []).map(formatError);
+}
+
+/** Separate suite policy: listed fields must be present. Extra fields remain allowed. */
+export function missingFields(ref: SchemaRef, data: unknown): { index: number; field: string }[] {
+  const name = (ref.endsWith('[]') ? ref.slice(0, -2) : ref) as SchemaName;
+  const records: unknown[] = ref.endsWith('[]') && Array.isArray(data) ? data : [data];
+  return records.flatMap((record, index) =>
+    Object.keys(spec.components.schemas[name].properties)
+      .filter((field) => record === null || typeof record !== 'object' || !Object.hasOwn(record, field))
+      .map((field) => ({ index, field })),
+  );
 }

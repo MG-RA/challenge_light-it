@@ -1,12 +1,8 @@
 import { expect as base, type APIResponse } from '@playwright/test';
 import { schemaErrors, type SchemaRef } from '../api/contract';
+import { diagnosticUrl, redactedBody } from './redact';
 
-const MAX_BODY_CHARS = 2_000;
 const MAX_ERRORS = 20;
-
-function truncate(text: string): string {
-  return text.length > MAX_BODY_CHARS ? `${text.slice(0, MAX_BODY_CHARS)}… (${text.length} chars)` : text;
-}
 
 export const expect = base.extend({
   /** Asserts the status code; unlike `expect(res.status()).toBe(n)`, the failure shows the body. */
@@ -16,10 +12,10 @@ export const expect = base.extend({
     const body = await response.text();
     const message = () =>
       `${this.utils.matcherHint('toHaveStatus', 'response', 'status', { isNot: this.isNot })}\n\n` +
-      `${response.url()}\n` +
+      `${diagnosticUrl(response.url())}\n` +
       `Expected status: ${this.isNot ? 'not ' : ''}${this.utils.printExpected(expected)}\n` +
       `Received status: ${this.utils.printReceived(actual)}\n` +
-      `Body: ${truncate(body)}`;
+      `Body: ${redactedBody(body)}`;
     return { name: 'toHaveStatus', pass, expected, actual, message };
   },
 

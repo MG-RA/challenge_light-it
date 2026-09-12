@@ -12,7 +12,7 @@
     "test:ui": "playwright test --project=ui",
     "test:api": "playwright test --project=api",
     "test:db": "playwright test --project=db",
-    "test:readonly": "playwright test --grep-invert @mutating",
+    "test:writes": "playwright test --project=api --grep @mutating",
     "test:headed": "playwright test --project=ui --headed",
     "test:debug": "playwright test --debug",
     "pw:ui": "playwright test --ui",

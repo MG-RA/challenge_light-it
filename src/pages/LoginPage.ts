@@ -5,12 +5,14 @@ export class LoginPage {
   readonly emailInput: Locator;
   readonly passwordInput: Locator;
   readonly submitButton: Locator;
+  readonly errorMessage: Locator;
 
   constructor(private readonly page: Page) {
     this.heading = page.getByRole('heading', { name: 'MedAppoint' }).describe('Login heading');
     this.emailInput = page.getByLabel('Email').describe('Email input');
     this.passwordInput = page.getByLabel('Password').describe('Password input');
     this.submitButton = page.getByRole('button', { name: 'Sign In' }).describe('Sign In button');
+    this.errorMessage = page.getByText('Invalid email or password', { exact: false }).describe('Login rejection feedback');
   }
 
   async goto(): Promise<void> {
@@ -21,5 +23,14 @@ export class LoginPage {
     await this.emailInput.fill(email);
     await this.passwordInput.fill(password);
     await this.submitButton.click();
+  }
+
+  async loginAndWaitForResponse(email: string, password: string) {
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) =>
+        new URL(res.url()).pathname === '/api/auth/login' && res.request().method() === 'POST'),
+      this.login(email, password),
+    ]);
+    return response;
   }
 }

@@ -42,7 +42,7 @@ export class ApiClient {
     return this.send('GET', '/api/users/me');
   }
 
-  updateMe(body: UpdateProfileRequest): Promise<APIResponse> {
+  updateMe(body: Partial<UpdateProfileRequest>): Promise<APIResponse> {
     return this.send('PUT', '/api/users/me', body);
   }
 
@@ -68,7 +68,7 @@ export class ApiClient {
     return this.send('GET', `/api/appointments/${id}`);
   }
 
-  createAppointment(body: CreateAppointmentRequest): Promise<APIResponse> {
+  createAppointment(body: Partial<CreateAppointmentRequest>): Promise<APIResponse> {
     return this.send('POST', '/api/appointments', body);
   }
 
