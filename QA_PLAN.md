@@ -156,7 +156,8 @@ settings were overridden or if the token identity is not the configured DB accou
 
 **Cadence**
 
-- Every PR and every push to `main`: typecheck, lint, default regression (CI, Chromium).
+- Every PR and every push to `main`: typecheck, lint, default regression (CI, Chromium). Running and
+  green on GitHub Actions since 2026-09-13 (pull request #1 and its merge to `main`).
 - Write suite: **manual, deliberate, with permission**. Never scheduled, never in PR CI. It writes to
   a shared production-like target and can leave documented payment/notification residue.
 - Before any submission or milestone: one default run plus one write run on the same day, with

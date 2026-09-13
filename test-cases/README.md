@@ -73,7 +73,7 @@ The default suite (what CI runs) has no ordinary failures: every open finding it
 
 ## Run record
 
-2026-09-13, commit `d152cd3` (branch `chore/node26-quality-batch1`, clean tree), local Chromium, run in the order the [QA plan](../QA_PLAN.md#6-execution-model) requires. No marked rows existed before the write runs.
+2026-09-13. Runs 1–4 used commit `d152cd3` (clean tree) and local Chromium, in the order the [QA plan](../QA_PLAN.md#6-execution-model) requires; runs 5–7 followed later changes the same day. Runs 8–9 are the default suite on GitHub Actions (Ubuntu, Chromium, 2 workers, retries allowed, no traces). No marked rows existed before the write runs.
 
 | Order | Run | Command | Duration | Result |
 |---:|---|---|---:|---|
@@ -84,8 +84,10 @@ The default suite (what CI runs) has no ordinary failures: every open finding it
 | 5 | Default, CI mode, after marking the default-suite defects | `CI=1 npx playwright test` | 45 s | 60 passed, 9 expected failures, 0 failed, 1 skipped; exit code 0 |
 | 6 | Default, after the suite time zone, page-object locators and retiring TC-UI-DASH-008 | `npx playwright test` | 32 s | 59 passed, 9 expected failures, 0 failed, 1 skipped; exit code 0 |
 | 7 | Payment writes, after splitting TC-PAY-002 and adding TC-PAY-003 | `RUN_MUTATING=1 npx playwright test tests/api/payments.spec.ts --project=api --grep @mutating` | 24 s | setup passed, 2 failed (F-18, F-24) |
+| 8 | Default, GitHub Actions, [pull request #1](https://github.com/MG-RA/challenge_light-it/pull/1) at `7b401cf` | [workflow run](https://github.com/MG-RA/challenge_light-it/actions/runs/34776433354) | 35 s | 59 passed, 9 expected failures, 0 failed, 1 skipped; 0 retries |
+| 9 | Default, GitHub Actions, merge to `main` at `9fa8c69` | [workflow run](https://github.com/MG-RA/challenge_light-it/actions/runs/34776679694) | 36 s | 59 passed, 9 expected failures, 0 failed, 1 skipped; 0 retries |
 
-Run 5 replaced run 1 for the default suite: its only change was moving the five ordinary failures from run 1 (F-12 UI, F-15 ×2, F-21, F-23) behind scoped expected-failure markers, and each still failed with the signature recorded in run 1. Run 6 is now the latest default run; every expected failure kept its signature. Run 7 replaces the payment case from run 2. Each case is counted once (the setup case in run 6), which gives the 85-case summary above. There were no retries, no flaky results and no unexpected passes; every expected failure matched its recorded signature on inspection. After runs 2, 3 and 7, a DB query for `notes like 'qa-suite %'` returned no rows, and no payment residue was created because the valid payment did not persist (F-18). Raw HTML/JSON reports stay local because traces and screenshots are not redacted.
+Run 5 replaced run 1 for the default suite: its only change was moving the five ordinary failures from run 1 (F-12 UI, F-15 ×2, F-21, F-23) behind scoped expected-failure markers, and each still failed with the signature recorded in run 1. Run 6 is the latest local default run; every expected failure kept its signature. Runs 8 and 9 reproduced run 6 exactly on GitHub Actions: the same 9 expected failures and no unexpected, flaky or retried results. Run 7 replaces the payment case from run 2. Each case is counted once (the setup case in run 6), which gives the 85-case summary above. There were no retries, no flaky results and no unexpected passes; every expected failure matched its recorded signature on inspection. After runs 2, 3 and 7, a DB query for `notes like 'qa-suite %'` returned no rows, and no payment residue was created because the valid payment did not persist (F-18). Raw local HTML/JSON reports stay local because local traces and screenshots are not redacted. The CI artifacts of runs 8 and 9 were downloaded and checked: no traces, screenshots, videos, credentials or tokens.
 
 ## Traceability matrix
 

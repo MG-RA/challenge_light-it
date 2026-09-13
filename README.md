@@ -1,12 +1,14 @@
 # Light-it QA challenge — MedAppoint
 
+[![Playwright](https://github.com/MG-RA/challenge_light-it/actions/workflows/playwright.yml/badge.svg?branch=main)](https://github.com/MG-RA/challenge_light-it/actions/workflows/playwright.yml)
+
 Playwright and TypeScript test suite for MedAppoint, covering the web UI, the REST API and the read-only Postgres database. API responses are validated against the supplied OpenAPI contract and reconciled with stored data; the database is the oracle. Tests that change remote data are opt-in.
 
 ## At a glance
 
 - **Verdict: not release-ready.** Two P0 blockers: a payment reports success but is never stored (F-18), and a cancellation reports success but the appointment stays active (F-16). Both were reproduced twice against the database.
 - **16 confirmed bugs** — 2 P0, 4 P1, 8 P2, 2 P3 — plus one historical report awaiting re-verification. Next most urgent: double booking of the same slot (F-03), invalid dates and times accepted and stored (F-02, F-12, F-17).
-- **85 automated tests.** The 69 in the default suite pass in CI mode (verified locally with `CI=1`); 9 of them track 7 known bugs as expected failures, so any red run means something changed. 16 opt-in tests write owned, marked data to the shared environment and reproduce the write-path bugs; cleanup is verified in the DB.
+- **85 automated tests.** The 69 in the default suite pass in GitHub Actions ([latest run on `main`](https://github.com/MG-RA/challenge_light-it/actions/runs/34776679694)); 9 of them track 7 known bugs as expected failures, so any red run means something changed. 16 opt-in tests write owned, marked data to the shared environment and reproduce the write-path bugs; cleanup is verified in the DB.
 - **Run it:** `npm ci`, `npx playwright install chromium`, fill `.env` from `.env.example`, then `npm test`.
 
 ## Start here
@@ -31,7 +33,7 @@ Playwright and TypeScript test suite for MedAppoint, covering the web UI, the RE
 | Failed, each reproducing a finding (opt-in write and rate-limit runs only) | 12 |
 | Skipped (no attributable notification) | 1 |
 
-**The default suite is green:** every defect it reproduces is an expected failure, so a red CI run always means something new — a regression, a changed defect signature, or a fix to confirm. Every failure reproduces a documented finding; there were no new failures, no unexpected passes, no retries and no suite errors. Write cleanup was verified: no marked rows remained and no payment residue was created. Per-run tallies and durations are in the [run record](test-cases/README.md#run-record); per-case results are in the [test-case matrix](test-cases/README.md#traceability-matrix).
+**The default suite is green in GitHub Actions:** every defect it reproduces is an expected failure, so a red CI run always means something new — a regression, a changed defect signature, or a fix to confirm. Every failure reproduces a documented finding; there were no new failures, no unexpected passes, no retries and no suite errors. Write cleanup was verified: no marked rows remained and no payment residue was created. Per-run tallies and durations are in the [run record](test-cases/README.md#run-record); per-case results are in the [test-case matrix](test-cases/README.md#traceability-matrix).
 
 **Bugs requiring action** (full details in [FINDINGS.md](docs/FINDINGS.md)):
 
@@ -124,6 +126,6 @@ QA_PLAN.md           scope, risks, approach and roadmap
 
 ## Reports and CI
 
-HTML reports go to `playwright-report/`; JSON and JUnit results go to `test-results/`. GitHub Actions ([workflow](.github/workflows/playwright.yml)) runs type checking, lint and the default suite, on pushes to `main`, same-repository pull requests and manual dispatch. It needs repository secrets `APP_USER_EMAIL`, `APP_USER_PASSWORD`, `DB_HOST`, `DB_USER` and `DB_PASSWORD`. The recorded results come from local runs, including one with `CI=1`; a hosted run has not been recorded yet.
+HTML reports go to `playwright-report/`; JSON and JUnit results go to `test-results/`. GitHub Actions ([workflow](.github/workflows/playwright.yml)) runs type checking, lint and the default suite, on pushes to `main`, same-repository pull requests and manual dispatch. It needs repository secrets `APP_USER_EMAIL`, `APP_USER_PASSWORD`, `DB_HOST`, `DB_USER` and `DB_PASSWORD`. The first hosted runs passed on 2026-09-13, for [pull request #1](https://github.com/MG-RA/challenge_light-it/actions/runs/34776433354) and for the [merge to `main`](https://github.com/MG-RA/challenge_light-it/actions/runs/34776679694): 69 tests, 59 passed, 9 expected failures, 1 skipped, no retries. Their logs and artifacts were checked and contain no credentials, tokens, traces or screenshots. Opt-in write and rate-limit results come from local runs; see the [run record](test-cases/README.md#run-record).
 
 Status diagnostics redact response bodies. In CI no traces, screenshots or videos are recorded, because traces carry the session token and artifacts of a public repository are downloadable; CI artifacts hold only reports and assertion messages. Local runs keep all three for failures and can contain account data, so review them before sharing; `.env`, `.auth/` and raw reports are git-ignored.
