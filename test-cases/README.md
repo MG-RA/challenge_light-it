@@ -46,7 +46,7 @@ Every case has:
 |---|---|
 | Pass | Every assertion held. |
 | Expected failure (F-xx) | Marked `test.fail`. All unrelated checks passed first, and only the known-defect assertion failed. Playwright counts it as passed. |
-| Fail (F-xx) | An ordinary failure that reproduces a finding. `@mutating` and newer UI cases never use `test.fail`. |
+| Fail (F-xx) | An ordinary failure that reproduces a finding. Only opt-in runs (`@mutating` writes and the rate-limit check) use this; see [known-defect marking](../QA_PLAN.md#42-known-defect-marking). |
 | Skipped | A data precondition or safety gate was not met. Never counted as a pass. |
 
 ## Shared preconditions
@@ -60,16 +60,16 @@ These apply to every case unless the case says otherwise.
 
 ## Results summary
 
-Latest recorded result per case, all from the full run of 2026-09-13 described in the [run record](#run-record).
+Latest recorded result per case, all from 2026-09-13 as described in the [run record](#run-record).
 
 | Result | Cases |
 |---|---:|
 | Pass | 64 |
-| Expected failure | 4 (F-01, F-14 ×2, F-20) |
-| Fail | 16 (F-02, F-03, F-04, F-05, F-12 ×3, F-15 ×2, F-16, F-17, F-18, F-21, F-22, F-23 ×2) |
+| Expected failure | 9 (F-01, F-12 UI, F-14 ×2, F-15 ×2, F-20, F-21, F-23 controlled) |
+| Fail | 11 (F-02, F-03, F-04, F-05, F-12 ×2, F-16, F-17, F-18, F-22, F-23 persisted) |
 | Skipped | 1 (TC-NOT-002: no attributable notification) |
 
-Every failure reproduces a finding; none is a suite error. The failure count is not the bug count, because some findings fail more than one case.
+The default suite (what CI runs) has no ordinary failures: every open finding it reproduces is an expected failure. All 11 ordinary failures come from the opt-in write and rate-limit runs. Every failure reproduces a finding; none is a suite error. The failure count is not the bug count, because some findings fail more than one case.
 
 ## Run record
 
@@ -81,8 +81,9 @@ Every failure reproduces a finding; none is a suite error. The failure count is 
 | 2 | API writes | `RUN_MUTATING=1 npm run test:writes` | 2.3 min | setup + 4 passed, 8 failed (F-02, F-03, F-04, F-12 ×2, F-16, F-17, F-18), 1 skipped (TC-NOT-002) |
 | 3 | UI writes | `RUN_MUTATING=1 npx playwright test tests/ui/booking-state.spec.ts tests/ui/dashboard-state.spec.ts --project=ui --workers=1` | 33 s | setup passed, 2 failed (F-05, F-23) |
 | 4 | Rate limit | `RUN_RATE_LIMIT=1 npx playwright test tests/api/rate-limit.spec.ts --project=api --no-deps --workers=1` | 4 s | 1 failed (F-22: ten 401s, no 429) |
+| 5 | Default, CI mode, after marking the default-suite defects | `CI=1 npx playwright test` | 45 s | 60 passed, 9 expected failures, 0 failed, 1 skipped; exit code 0 |
 
-Each case is counted once (the setup case in run 1), which gives the 85-case summary above. There were no retries, no flaky results and no unexpected passes; every expected failure matched its recorded signature on inspection. After runs 2 and 3, a DB query for `notes like 'qa-suite %'` returned no rows, and no payment residue was created because the valid payment did not persist (F-18). Raw HTML/JSON reports stay local because traces and screenshots are not redacted.
+Run 5 replaces run 1 for the default suite. Its only change was moving the five ordinary failures from run 1 (F-12 UI, F-15 ×2, F-21, F-23) behind scoped expected-failure markers, and each still failed with the signature recorded in run 1. Each case is counted once (the setup case in run 5), which gives the 85-case summary above. There were no retries, no flaky results and no unexpected passes; every expected failure matched its recorded signature on inspection. After runs 2 and 3, a DB query for `notes like 'qa-suite %'` returned no rows, and no payment residue was created because the valid payment did not persist (F-18). Raw HTML/JSON reports stay local because traces and screenshots are not redacted.
 
 ## Traceability matrix
 
@@ -121,8 +122,8 @@ Each case is counted once (the setup case in run 1), which gives the 85-case sum
 | TC-DOC-003 | Doctors API › GET /doctors/:id matches the stored doctor | api | F-09 | Pass |
 | TC-DOC-004 | Doctors API › GET /doctors/:id/availability returns valid clock slots | api | — | Pass |
 | TC-DOC-005 | Doctors API › GET /doctors/:id returns 404 for an unknown doctor | api | — | Pass |
-| TC-APT-001 | Appointments API › GET /appointments contains only the patient records and matches the DB | api | F-15 | Fail (soft date assertion only) |
-| TC-APT-002 | Appointments API › GET /appointments/:id returns an owned appointment matching the DB | api | F-15 | Fail (soft date assertion only) |
+| TC-APT-001 | Appointments API › GET /appointments contains only the patient records and matches the DB | api | F-15 | Expected failure |
+| TC-APT-002 | Appointments API › GET /appointments/:id returns an owned appointment matching the DB | api | F-15 | Expected failure |
 | TC-APT-005 | Appointments API writes › POST /appointments stores exactly one owned appointment and detail agrees | api `@mutating` | — | Pass |
 | TC-APT-006 | Appointments API writes › PUT /appointments/:id/reschedule stores the new slot and preserves identity | api `@mutating` | — | Pass |
 | TC-APT-007 | Appointments API writes › PUT /appointments/:id/cancel stores the cancellation without touching a control | api `@mutating` | F-16 | Fail |
@@ -153,9 +154,9 @@ Each case is counted once (the setup case in run 1), which gives the 85-case sum
 | TC-UI-DASH-008 | Dashboard › upcoming count reflects patient records | ui | — | Pass |
 | TC-UI-DASH-009 | Dashboard › completed count reflects patient records | ui | — | Pass |
 | TC-UI-DASH-010 | Dashboard › cancelled count reflects patient records | ui | — | Pass |
-| TC-UI-DASH-011 | Dashboard › next appointment is the earliest future active or pending record | ui | F-21 | Fail |
+| TC-UI-DASH-011 | Dashboard › next appointment is the earliest future active or pending record | ui | F-21 | Expected failure |
 | TC-UI-DASH-012 | Dashboard › next appointment View all opens appointment history | ui | — | Pass |
-| TC-UI-DASH-013 | dashboard Upcoming appointments counter updates when appointment data changes | ui | F-23 | Fail |
+| TC-UI-DASH-013 | dashboard Upcoming appointments counter updates when appointment data changes | ui | F-23 | Expected failure |
 | TC-UI-DASH-014 | dashboard Completed counter updates when appointment data changes | ui | — | Pass |
 | TC-UI-DASH-015 | dashboard Cancelled counter updates when appointment data changes | ui | — | Pass |
 | TC-UI-DASH-016 | dashboard upcoming counter changes after a persisted booking and deletion | ui `@mutating` | F-23 | Fail |
@@ -171,7 +172,7 @@ Each case is counted once (the setup case in run 1), which gives the 85-case sum
 | TC-UI-BOOK-004 | booking validates missing time_slot before submitting | ui | — | Pass |
 | TC-UI-BOOK-005 | switching doctors replaces slots and clears the previous selection | ui | — | Pass |
 | TC-UI-BOOK-006 | availability failure has feedback and recovers after changing doctor | ui | — | Pass |
-| TC-UI-BOOK-007 | booking rejects a past date in the UI | ui | F-12 | Fail |
+| TC-UI-BOOK-007 | booking rejects a past date in the UI | ui | F-12 | Expected failure |
 | TC-UI-BOOK-008 | booked doctor date and slot cannot be selected again | ui `@mutating` | F-05 | Fail |
 
 ## Keeping this folder in sync

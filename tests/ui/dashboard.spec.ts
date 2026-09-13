@@ -31,26 +31,31 @@ test.describe('Dashboard', () => {
       await expect(card.locator('.text-headline-lg')).toHaveText(String(count));
     });
   }
-  test('next appointment is the earliest future active or pending record', async ({ page, dashboardPage, db, testUser }) => {
-    const now = new Date();
-    const rows = (await db.appointmentsForPatient(testUser.id))
-      .filter((row) => ['active', 'pending'].includes(row.status) && new Date(`${row.appointment_date}T${row.time_slot}`) >= now)
-      .sort((a, b) => `${a.appointment_date}T${a.time_slot}`.localeCompare(`${b.appointment_date}T${b.time_slot}`) || a.id - b.id);
-    await dashboardPage.goto();
-    const panel = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Your next appointment' }) });
-    const next = rows[0];
-    if (!next) {
-      await expect(panel.getByTestId('next-appointment-doctor')).toHaveCount(0);
-      await expect(panel).toContainText(/no upcoming|no appointments/i);
-      return;
-    }
-    const doctor = await db.oneOrThrow<{ first_name: string; last_name: string }>('next doctor',
-      'select first_name, last_name from doctors where id = $1', [next.doctor_id]);
-    await expect(panel.getByTestId('next-appointment-doctor')).toHaveText(`Dr. ${doctor.first_name} ${doctor.last_name}`);
-    const date = new Date(`${next.appointment_date}T12:00:00`).toLocaleDateString('en-US');
-    await expect(panel).toContainText(`${date} at ${next.time_slot}`);
-    await expect(panel).toContainText(next.status === 'active' ? 'Confirmed' : 'Pending');
-  });
+  test('next appointment is the earliest future active or pending record',
+    { annotation: { type: 'issue', description: 'F-21: the card shows a different appointment from the earliest eligible one (docs/FINDINGS.md)' } },
+    async ({ page, dashboardPage, db, testUser }) => {
+      const now = new Date();
+      const rows = (await db.appointmentsForPatient(testUser.id))
+        .filter((row) => ['active', 'pending'].includes(row.status) && new Date(`${row.appointment_date}T${row.time_slot}`) >= now)
+        .sort((a, b) => `${a.appointment_date}T${a.time_slot}`.localeCompare(`${b.appointment_date}T${b.time_slot}`) || a.id - b.id);
+      await dashboardPage.goto();
+      const panel = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Your next appointment' }) });
+      const next = rows[0];
+      if (!next) {
+        await expect(panel.getByTestId('next-appointment-doctor')).toHaveCount(0);
+        await expect(panel).toContainText(/no upcoming|no appointments/i);
+        return;
+      }
+      const doctor = await db.oneOrThrow<{ first_name: string; last_name: string }>('next doctor',
+        'select first_name, last_name from doctors where id = $1', [next.doctor_id]);
+      // The card renders an appointment, so only which appointment it shows remains to fail.
+      await expect(panel.getByTestId('next-appointment-doctor')).toHaveText(/^Dr\. \S/);
+      test.fail(true, 'F-21: only the selected next appointment may fail');
+      await expect(panel.getByTestId('next-appointment-doctor')).toHaveText(`Dr. ${doctor.first_name} ${doctor.last_name}`);
+      const date = new Date(`${next.appointment_date}T12:00:00`).toLocaleDateString('en-US');
+      await expect(panel).toContainText(`${date} at ${next.time_slot}`);
+      await expect(panel).toContainText(next.status === 'active' ? 'Confirmed' : 'Pending');
+    });
   test('next appointment View all opens appointment history', async ({ page, dashboardPage }) => {
     await dashboardPage.goto();
     await page.getByRole('link', { name: 'View all', exact: true }).click();
@@ -59,8 +64,13 @@ test.describe('Dashboard', () => {
   });
 });
 
-for (const [label, expected] of [['Upcoming appointments', 2], ['Completed', 1], ['Cancelled', 2]] as const) {
-  test(`dashboard ${label} counter updates when appointment data changes`, async ({ page, dashboardPage, testUser }) => {
+for (const [label, expected, finding] of [
+  ['Upcoming appointments', 2, 'F-23'], ['Completed', 1, undefined], ['Cancelled', 2, undefined],
+] as const) {
+  const details = finding
+    ? { annotation: { type: 'issue', description: `${finding}: the ${label} counter does not follow appointment data (docs/FINDINGS.md)` } }
+    : {};
+  test(`dashboard ${label} counter updates when appointment data changes`, details, async ({ page, dashboardPage, testUser }) => {
     // Controlled responses isolate UI aggregation from backend lifecycle defects.
     const future = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
     const past = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
@@ -81,12 +91,15 @@ for (const [label, expected] of [['Upcoming appointments', 2], ['Completed', 1],
     });
     const count = page.getByText(label, { exact: true }).locator('../..').locator('.text-headline-lg');
     await dashboardPage.goto();
-    await expect.soft(count, `${label}: empty dataset`).toHaveText('0');
+    await expect(count, `${label} counter is rendered`).toHaveText(/^\d+$/);
     const emptyReads = reads;
+    expect(emptyReads, 'dashboard reads appointment data on initial load').toBeGreaterThan(0);
+    // Completed and Cancelled run this same flow unmarked, so they still guard the reload refresh hard.
+    if (finding) test.fail(true, `${finding}: only the ${label} counter values may fail`);
+    await expect.soft(count, `${label}: empty dataset`).toHaveText('0');
     populated = true;
     await page.reload();
     await expect.soft(count, `${label}: changed dataset after reload`).toHaveText(String(expected));
-    expect.soft(emptyReads, 'dashboard reads appointment data on initial load').toBeGreaterThan(0);
     expect.soft(reads, 'dashboard refreshes appointment data on reload').toBeGreaterThan(emptyReads);
     test.info().annotations.push({ type: 'observation', description: `${label}: intercepted appointment reads=${reads}` });
   });

@@ -212,7 +212,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Impact:** Strict consumers reject values; timezone interpretation may shift the displayed day. No actual UI shift was demonstrated.
 
-   **Recommended action / limits:** Serialize date-only values or agree an intentional contract change. TC-APT-001/002 now use soft contract assertions and continue DB reconciliation; standalone TC-APT-003/004 were retired. These failures are not marked expected.
+   **Recommended action / limits:** Serialize date-only values or agree an intentional contract change. TC-APT-001/002 run DB reconciliation hard first and then assert the date format as a scoped expected failure; standalone TC-APT-003/004 were retired.
 
    **Evidence / coverage:** [Appointment cases](../test-cases/api/appointments.md).
 
@@ -314,7 +314,7 @@ These retain their IDs for traceability. They are not confirmed functional bugs 
 
 ## Latest verified controls and remaining gaps
 
-Across all 85 automated cases, the full run of 2026-09-13 recorded **64 passed, 4 expected failures, 16 failed and 1 skipped** ([per-case results](../test-cases/README.md#results-summary)). Every failure reproduces a finding above. The failure count is not the bug count: F-12 fails three cases, and F-15 and F-23 two each.
+Across all 85 automated cases, the runs of 2026-09-13 recorded **64 passed, 9 expected failures, 11 failed and 1 skipped** ([per-case results](../test-cases/README.md#results-summary)). Every failure reproduces a finding above. Findings reproduced by the default suite (F-01, F-12 UI, F-14, F-15, F-20, F-21, F-23 controlled) are expected failures, so CI stays green until something changes; the opt-in write and rate-limit runs keep ordinary failures. The failure count is not the bug count: F-12 is reproduced by three cases, and F-15 and F-23 by two each.
 
 Completed and Cancelled counters update with controlled data after reload. Quick Actions, sidebar destinations, New Appointment, logout with Back/direct-route/reload checks, required fields, malformed email, availability failure/recovery, and simulated 429 feedback pass. DB connection/table access and write denial pass. The earlier point-in-time Upcoming match was insufficient: later change-based tests establish F-23.
 

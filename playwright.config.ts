@@ -31,9 +31,11 @@ export default defineConfig<TestOptions>({
 
   use: {
     baseURL: env.baseUrl,
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    // Traces hold the bearer and localStorage token, and screenshots/videos show account data.
+    // CI artifacts on a public repository are downloadable, so keep them local-only.
+    trace: process.env.CI ? 'off' : 'retain-on-failure',
+    screenshot: process.env.CI ? 'off' : 'only-on-failure',
+    video: process.env.CI ? 'off' : 'retain-on-failure',
   },
 
   projects: [

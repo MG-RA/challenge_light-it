@@ -225,7 +225,7 @@ Specs: [dashboard.spec.ts](../../tests/ui/dashboard.spec.ts) and [dashboard-stat
 | Type | Functional, UI |
 | Priority | P1 |
 | Finding | F-21 |
-| Last recorded | Fail, 2026-09-13: UI Carlos Méndez; expected María Fernández. |
+| Last recorded | Expected failure, F-21 (2026-09-13): UI Carlos Méndez; expected María Fernández. |
 
 **Preconditions:** Authenticated browser and DB appointment/doctor read access.
 
@@ -235,12 +235,13 @@ Specs: [dashboard.spec.ts](../../tests/ui/dashboard.spec.ts) and [dashboard-stat
 |---|---|---|
 | 1 | Read owned DB appointments; exclude past/completed/cancelled; sort. | Earliest eligible record is selected, or no record exists. |
 | 2 | Open /dashboard; inspect Your next appointment. | If empty: no doctor and visible no-upcoming message. |
-| 3 | If populated, look up selected doctor in DB. | Displayed doctor full name matches. |
-| 4 | Compare displayed date, time and status. | Date/time match; active is Confirmed, pending is Pending. |
+| 3 | If populated, look up selected doctor in DB and confirm the card renders a doctor. | The card shows a `Dr. …` name. |
+| 4 | *(after `test.fail`)* Compare the displayed doctor. | Displayed doctor full name matches. |
+| 5 | *(after `test.fail`)* Compare displayed date, time and status. | Date/time match; active is Confirmed, pending is Pending. |
 
 **Postconditions:** No remote data changed.
 
-**Coverage limit:** Live seed data selects the populated or empty branch; this run exercised the populated branch. Assertions after the first mismatch may not run.
+**Coverage limit:** Live seed data selects the populated or empty branch; this run exercised the populated branch. The empty branch has no marker, so it fails normally. Assertions after the first mismatch may not run.
 
 ---
 
@@ -278,7 +279,7 @@ Specs: [dashboard.spec.ts](../../tests/ui/dashboard.spec.ts) and [dashboard-stat
 | Type | Functional, controlled UI integration |
 | Priority | P1 |
 | Finding | F-23 |
-| Last recorded | Fail, 2026-09-13: stayed 3 for both datasets. |
+| Last recorded | Expected failure, F-23 (2026-09-13): stayed 3 for both datasets. |
 
 **Preconditions:** Authenticated browser, configured user identity, appointment GET intercepted before dashboard navigation.
 
@@ -286,13 +287,14 @@ Specs: [dashboard.spec.ts](../../tests/ui/dashboard.spec.ts) and [dashboard-stat
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | Intercept GET /api/appointments with an empty array; open dashboard. | Upcoming appointments displays 0. |
-| 2 | Switch response to the six-record dataset and reload. | Upcoming appointments displays 2. |
-| 3 | Check request counters. | Appointment data was requested initially and again after reload. |
+| 1 | Intercept GET /api/appointments with an empty array; open dashboard. | The counter renders a number, and appointment data was requested. |
+| 2 | *(after `test.fail`)* **Soft:** read the counter. | Upcoming appointments displays 0. |
+| 3 | Switch response to the six-record dataset and reload. | Upcoming appointments displays 2 (soft). |
+| 4 | Check request counters. | Appointment data was requested again after reload (soft). |
 
 **Postconditions:** No remote data changed.
 
-**Coverage limit:** Responses are controlled, so this verifies UI aggregation/reload, not backend persistence, cancellation or completion endpoints.
+**Coverage limit:** Responses are controlled, so this verifies UI aggregation/reload, not backend persistence, cancellation or completion endpoints. The reload-refresh check sits after the F-23 marker here, but TC-UI-DASH-014/015 run the same flow unmarked and still fail on that regression.
 
 ---
 

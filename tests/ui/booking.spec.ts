@@ -78,21 +78,27 @@ test('availability failure has feedback and recovers after changing doctor', asy
   await expect(booking.slots).toHaveText(['14:30']);
 });
 
-test('booking rejects a past date in the UI', async ({ page }) => {
-  let submissions = 0;
-  await page.route('**/api/doctors/*/availability*', (route) => route.fulfill({ json: { time_slots: ['09:00'] } }));
-  await page.route('**/api/appointments', async (route) => {
-    if (route.request().method() === 'GET') return route.continue();
-    submissions++;
-    await route.fulfill({ status: 400, json: { error: 'Past date' } });
+test('booking rejects a past date in the UI',
+  { annotation: { type: 'issue', description: 'F-12: the date input has no minimum and a past date is not blocked (docs/FINDINGS.md)' } },
+  async ({ page }) => {
+    let submissions = 0;
+    await page.route('**/api/doctors/*/availability*', (route) => route.fulfill({ json: { time_slots: ['09:00'] } }));
+    await page.route('**/api/appointments', async (route) => {
+      if (route.request().method() === 'GET') return route.continue();
+      submissions++;
+      await route.fulfill({ status: 400, json: { error: 'Past date' } });
+    });
+    const booking = new BookingPage(page);
+    await booking.goto();
+    await booking.doctor.selectOption({ index: 1 });
+    await booking.date.fill('2000-01-01');
+    await page.locator('#time_slot').selectOption('09:00');
+    // The form is fully populated, so only the missing past-date validation remains to fail.
+    await expect(booking.date).toHaveValue('2000-01-01');
+    await expect(page.locator('#time_slot')).toHaveValue('09:00');
+    await page.getByTestId('submit-appointment').click();
+    test.fail(true, 'F-12: only the missing past-date validation may fail');
+    await expect(booking.date).toBeFocused();
+    expect(await booking.date.evaluate((input: HTMLInputElement) => input.validity.rangeUnderflow)).toBe(true);
+    expect(submissions).toBe(0);
   });
-  const booking = new BookingPage(page);
-  await booking.goto();
-  await booking.doctor.selectOption({ index: 1 });
-  await booking.date.fill('2000-01-01');
-  await page.locator('#time_slot').selectOption('09:00');
-  await page.getByTestId('submit-appointment').click();
-  await expect(booking.date).toBeFocused();
-  expect(await booking.date.evaluate((input: HTMLInputElement) => input.validity.rangeUnderflow)).toBe(true);
-  expect(submissions).toBe(0);
-});

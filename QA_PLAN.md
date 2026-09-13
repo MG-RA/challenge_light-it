@@ -96,16 +96,25 @@ A known defect gets its own test. Status, shape, unrelated fields and data preco
 therefore surfaces as an *unexpected pass* for review rather than silently staying green. Never mark
 a whole test body as expected-to-fail.
 
-The marker is used only for stable read-path signatures (F-01, F-14, F-20). Write, UI and
-business-rule defects stay **ordinary failures**, so a red run keeps them visible; contract drift that
-would otherwise stop DB reconciliation (F-15) uses a soft assertion instead.
+Which runs use the marker is decided by who judges the result:
+
+- **Default suite (CI):** every open finding it reproduces is marked (F-01, F-12 UI, F-14, F-15,
+  F-20, F-21, F-23). CI is then green unless something *new* happens: an unrelated regression before
+  a marker, a known defect failing with a different signature, or a fix surfacing as an unexpected
+  pass. Any red CI run needs action; none needs manual triage against the findings list.
+- **Opt-in runs** (`@mutating` writes, rate limit): defects stay **ordinary failures**. These runs
+  are manual and each result is inspected and recorded per case, so a red run keeps them visible.
+
+A finding reproduced in both keeps both behaviors (F-12: expected failure in the UI case, ordinary
+failures in the API write cases).
 
 ### 4.3 Documented exception
 
 **F-15:** the API returns appointment dates as UTC-midnight timestamps instead of `YYYY-MM-DD`.
 Read-side tests convert that one exact representation and validate everything else normally;
-soft date-format assertions in the list and detail reconciliation cases (TC-APT-001/002) keep the mismatch visible. Non-midnight values, offsets,
-malformed and impossible dates still fail. The published schema is not modified.
+the list and detail reconciliation cases (TC-APT-001/002) assert the date format last, behind the
+F-15 marker, after every reconciliation check has passed. Non-midnight values, offsets, malformed and
+impossible dates still fail. The published schema is not modified.
 
 ## 5. Environment, data and accounts
 
@@ -149,8 +158,9 @@ settings were overridden or if the token identity is not the configured DB accou
 - Before any submission or milestone: one default run plus one write run on the same day, with
   results recorded in the test cases and findings.
 
-**Reporting:** HTML + list + JSON locally; CI adds JUnit and GitHub annotations and retains artifacts
-14 days. `test-results/results.json` separates actual from expected status. The durable
+**Reporting:** HTML + list + JSON locally, with traces, screenshots and videos kept for failures;
+CI adds JUnit and GitHub annotations and retains artifacts 14 days, but records **no** traces,
+screenshots or videos, because traces carry the session token and the repository is public. `test-results/results.json` separates actual from expected status. The durable
 record is each case's **Last recorded** result in [test-cases/](test-cases/README.md) and the
 evidence status in [FINDINGS](docs/FINDINGS.md); raw reports stay local and unsanitized.
 
@@ -208,9 +218,11 @@ Discovery on 2026-09-13 (`npm run test:list`):
 without an attributable notification. Calling an operation is not case coverage; remaining gaps are
 in §10.
 
-**Latest recorded results** (one full run of every suite on 2026-09-13, commit `d152cd3`, clean tree):
-**64 passed, 4 expected failures (F-01, F-14 ×2, F-20), 16 failed, 1 skipped**. Every failure
-reproduces a finding; no unexpected passes, retries or suite errors; write cleanup verified. Per-run
+**Latest recorded results** (one full run of every suite on 2026-09-13, then the default suite again
+in CI mode after marking its known defects):
+**64 passed, 9 expected failures, 11 failed, 1 skipped**. The default suite exits green; all 11
+ordinary failures come from the opt-in runs. Every failure reproduces a finding; no unexpected passes,
+retries or suite errors; write cleanup verified. Per-run
 tallies are in the [run record](test-cases/README.md#run-record) and per-case results in the
 [test-case matrix](test-cases/README.md#traceability-matrix).
 
@@ -265,7 +277,7 @@ is unmet — record it as blocked instead.
 - Agreed performance budgets (F-13); no image budget is automated.
 
 **Standing engineering follow-ups:** trusted-CA DB TLS — certificate verification is currently
-disabled — artifact redaction beyond the matcher, and artifact retention appropriate to the data.
+disabled — and redaction of local traces and screenshots beyond the matcher (CI no longer records them).
 
 ## 11. Document map
 

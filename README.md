@@ -14,16 +14,16 @@ Playwright and TypeScript test suite for MedAppoint, covering the web UI, the RE
 
 **Automation:** 85 Playwright tests in 16 files. The default run executes 70; the other 15 write owned data to the shared environment and run only when explicitly enabled.
 
-**Latest results:** one full run of every suite on 2026-09-13, against commit `d152cd3` with a clean tree (default, API writes, UI writes, then the rate-limit check):
+**Latest results:** one full run of every suite on 2026-09-13 (default, API writes, UI writes, then the rate-limit check), with the default suite rerun in CI mode after its known defects were marked:
 
 | Result | Cases |
 |---|---:|
 | Passed | 64 |
-| Expected failures (known defects marked `test.fail`) | 4 |
-| Failed, each reproducing a finding | 16 |
+| Expected failures (known defects marked `test.fail`) | 9 |
+| Failed, each reproducing a finding (opt-in write and rate-limit runs only) | 11 |
 | Skipped (no attributable notification) | 1 |
 
-Every failure reproduces a documented finding; there were no new failures, no unexpected passes, no retries and no suite errors. Write cleanup was verified: no marked rows remained and no payment residue was created. Per-run tallies and durations are in the [run record](test-cases/README.md#run-record); per-case results are in the [test-case matrix](test-cases/README.md#traceability-matrix).
+**The default suite is green:** every defect it reproduces is an expected failure, so a red CI run always means something new — a regression, a changed defect signature, or a fix to confirm. Every failure reproduces a documented finding; there were no new failures, no unexpected passes, no retries and no suite errors. Write cleanup was verified: no marked rows remained and no payment residue was created. Per-run tallies and durations are in the [run record](test-cases/README.md#run-record); per-case results are in the [test-case matrix](test-cases/README.md#traceability-matrix).
 
 **Bugs requiring action** (full details in [FINDINGS.md](docs/FINDINGS.md)):
 
@@ -115,6 +115,6 @@ QA_PLAN.md           scope, risks, approach and roadmap
 
 ## Reports and CI
 
-HTML reports go to `playwright-report/`; JSON and JUnit results go to `test-results/`. GitHub Actions ([workflow](.github/workflows/playwright.yml)) runs type checking, lint and the default suite, and needs repository secrets `APP_USER_EMAIL`, `APP_USER_PASSWORD`, `DB_HOST`, `DB_USER` and `DB_PASSWORD`. A hosted CI run has not been verified yet: the repository has no GitHub remote configured, so the recorded results come from local runs.
+HTML reports go to `playwright-report/`; JSON and JUnit results go to `test-results/`. GitHub Actions ([workflow](.github/workflows/playwright.yml)) runs type checking, lint and the default suite, on pushes to `main`, same-repository pull requests and manual dispatch. It needs repository secrets `APP_USER_EMAIL`, `APP_USER_PASSWORD`, `DB_HOST`, `DB_USER` and `DB_PASSWORD`. The recorded results come from local runs, including one with `CI=1`; a hosted run has not been recorded yet.
 
-Status diagnostics redact response bodies, but screenshots, traces and assertion diffs can still contain account data. Review artifacts before sharing them; `.env`, `.auth/` and raw reports are git-ignored.
+Status diagnostics redact response bodies. In CI no traces, screenshots or videos are recorded, because traces carry the session token and artifacts of a public repository are downloadable; CI artifacts hold only reports and assertion messages. Local runs keep all three for failures and can contain account data, so review them before sharing; `.env`, `.auth/` and raw reports are git-ignored.

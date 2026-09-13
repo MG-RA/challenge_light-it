@@ -7,26 +7,32 @@ import {
 } from './dbState';
 import { dateAfter, test, expect } from './writes';
 
+// F-15 is marked after the ownership and DB reconciliation checks, so a regression in those still fails.
+const F15 = { annotation: { type: 'issue', description: 'F-15: appointment dates are UTC-midnight timestamps, not YYYY-MM-DD (docs/FINDINGS.md)' } };
+
 test.describe('Appointments API', () => {
-  test('GET /appointments contains only the patient records and matches the DB', async ({ api, db, testUser }) => {
+  test('GET /appointments contains only the patient records and matches the DB', F15, async ({ api, db, testUser }) => {
     const { appointments, dateFormatViolations } = await readAppointments(await api.listAppointments(), 'list');
     const rows = await db.appointmentsForPatient(testUser.id);
-    expect.soft(dateFormatViolations, 'F-15: appointment date contract').toEqual([]);
     expect(appointments.map((a) => a.id).toSorted((a, b) => a - b)).toEqual(rows.map((a) => a.id));
     for (const appointment of appointments) {
       expect(appointment.patient_id).toBe(testUser.id);
       expect(appointment).toMatchObject({ ...rows.find((row) => row.id === appointment.id)! });
     }
+    test.skip(appointments.length === 0, 'No appointments to assess the F-15 date format');
+    test.fail(true, 'F-15: only the UTC-midnight date format may fail');
+    expect(dateFormatViolations, 'appointment_date uses the declared date-only format').toEqual([]);
   });
 
-  test('GET /appointments/:id returns an owned appointment matching the DB', async ({ api, db, testUser }) => {
+  test('GET /appointments/:id returns an owned appointment matching the DB', F15, async ({ api, db, testUser }) => {
     const [row] = await db.appointmentsForPatient(testUser.id);
     test.skip(!row, 'No owned appointment available for detail coverage');
     if (!row) return;
     const { appointments: [appointment], dateFormatViolations } = await readAppointments(await api.getAppointment(row.id), 'detail');
-    expect.soft(dateFormatViolations, 'F-15: appointment date contract').toEqual([]);
     expect(appointment).toMatchObject({ ...row });
     expect(appointment!.patient_id).toBe(testUser.id);
+    test.fail(true, 'F-15: only the UTC-midnight date format may fail');
+    expect(dateFormatViolations, 'appointment_date uses the declared date-only format').toEqual([]);
   });
 
 });
