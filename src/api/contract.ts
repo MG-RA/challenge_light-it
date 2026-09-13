@@ -1,14 +1,10 @@
 import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
-import spec from '../../docs/openapi.json';
+import { loadSpec, type OpenApiSpec } from './spec';
 import type { ApiError, Appointment, Doctor, Notification, Payment, User } from './types';
 
-export type SchemaName = keyof typeof spec.components.schemas;
-/** A component schema from the spec, or `Name[]` for an array of them. */
-export type SchemaRef = SchemaName | `${SchemaName}[]`;
-
-// TS model per spec schema. SchemaData indexes it by SchemaName, so a schema
-// added to the spec without an entry here fails to compile.
+// TS model per component schema of the contract. The contract is downloaded at run time, so the
+// names are checked when it loads: a modeled schema missing from the live spec fails loudly.
 type SchemaTypes = {
   User: User;
   Doctor: Doctor;
@@ -16,6 +12,20 @@ type SchemaTypes = {
   Payment: Payment;
   Notification: Notification;
   Error: ApiError;
+};
+
+export type SchemaName = keyof SchemaTypes;
+/** A component schema from the spec, or `Name[]` for an array of them. */
+export type SchemaRef = SchemaName | `${SchemaName}[]`;
+
+/** Every modeled schema name; the Record type makes this list complete by construction. */
+const MODELED: Record<SchemaName, true> = {
+  User: true,
+  Doctor: true,
+  Appointment: true,
+  Payment: true,
+  Notification: true,
+  Error: true,
 };
 
 /** The TS type a SchemaRef validates to, e.g. 'Doctor[]' → Doctor[]. */
@@ -32,18 +42,31 @@ export type SpecData<R extends SchemaRef> = R extends `${infer N extends SchemaN
     ? Partial<SchemaTypes[R]>
     : never;
 
-// `example` is an OpenAPI annotation Ajv doesn't know; `nullable` it supports natively.
-const ajv = new Ajv({ allErrors: true, keywords: ['example'] });
-addFormats(ajv);
+type Contract = { spec: OpenApiSpec; ajv: Ajv; validators: Map<SchemaRef, ValidateFunction> };
+let loaded: Contract | undefined;
 
-// Preserve the published contract, including its optional properties and allowance for extras.
-for (const [name, schema] of Object.entries(spec.components.schemas)) {
-  ajv.addSchema(schema, name);
+/** Loads and compiles the downloaded contract on first use, so importing this module needs no file. */
+function contract(): Contract {
+  if (loaded) return loaded;
+  const spec = loadSpec();
+  const missing = Object.keys(MODELED).filter((name) => !(name in spec.components.schemas));
+  if (missing.length) {
+    throw new Error(
+      `The OpenAPI contract no longer declares ${missing.join(', ')}. ` +
+        'Update src/api/types.ts and SchemaTypes before trusting contract checks.',
+    );
+  }
+  // `example` is an OpenAPI annotation Ajv doesn't know; `nullable` it supports natively.
+  const ajv = new Ajv({ allErrors: true, keywords: ['example'] });
+  addFormats(ajv);
+  // Preserve the published contract, including its optional properties and allowance for extras.
+  for (const [name, schema] of Object.entries(spec.components.schemas)) ajv.addSchema(schema, name);
+  loaded = { spec, ajv, validators: new Map() };
+  return loaded;
 }
 
-const validators = new Map<SchemaRef, ValidateFunction>();
-
 function validatorFor(ref: SchemaRef): ValidateFunction {
+  const { ajv, validators } = contract();
   let validate = validators.get(ref);
   if (!validate) {
     validate = ref.endsWith('[]')
@@ -72,12 +95,18 @@ export function schemaErrors(ref: SchemaRef, data: unknown): string[] {
 /** Separate suite policy: listed fields must be present. Extra fields remain allowed. */
 export function missingFields(ref: SchemaRef, data: unknown): { index: number; field: string }[] {
   const name = (ref.endsWith('[]') ? ref.slice(0, -2) : ref) as SchemaName;
+  const declared = Object.keys(contract().spec.components.schemas[name]?.properties ?? {});
   const records: unknown[] = ref.endsWith('[]') && Array.isArray(data) ? data : [data];
   return records.flatMap((record, index) =>
-    Object.keys(spec.components.schemas[name].properties)
+    declared
       .filter(
         (field) => record === null || typeof record !== 'object' || !Object.hasOwn(record, field),
       )
       .map((field) => ({ index, field })),
   );
+}
+
+/** Component schemas the live contract declares that the suite does not model yet. */
+export function unmodeledSchemas(spec: OpenApiSpec): string[] {
+  return Object.keys(spec.components.schemas).filter((name) => !(name in MODELED));
 }

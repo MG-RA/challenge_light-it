@@ -89,7 +89,7 @@ npm run format          # Prettier; CI runs format:check
 npm run report          # open the last HTML report
 ```
 
-The `api` and `ui` projects share one API login from `tests/auth.setup.ts`.
+The `api` and `ui` projects share one API login from `tests/auth.setup.ts`. The same setup step downloads the OpenAPI contract from the login-protected API docs (`/api-docs.json`) into the git-ignored `.auth/openapi.json`, so the contract is never committed and every run validates against the currently published version; the setup test records its title, version and SHA-256 as an annotation.
 
 **Opt-in runs** (shared live environment, run one at a time):
 
@@ -108,7 +108,7 @@ How write tests stay safe on shared data:
 ## Structure
 
 ```text
-src/api/             API client, models, OpenAPI contract validation
+src/api/             API client, models, OpenAPI contract download and validation
 src/auth/            shared session and forged-token helpers
 src/config/          environment validation and write opt-in
 src/db/              parameterized DB lookups and bounded state observation
@@ -120,7 +120,6 @@ tests/api/           API read cases, opt-in writes, ownership and cleanup helper
 tests/ui/            login, dashboard, navigation and booking
 test-cases/          written test cases, mirroring tests/
 docs/FINDINGS.md     prioritized defect register
-docs/openapi.json    supplied OpenAPI contract snapshot, never edited
 QA_PLAN.md           scope, risks, approach and roadmap
 ```
 

@@ -1,6 +1,5 @@
 # Generated or supplied files keep their original bytes.
 package-lock.json
-docs/openapi.json
 
 # Documentation tables are aligned by hand.
 *.md

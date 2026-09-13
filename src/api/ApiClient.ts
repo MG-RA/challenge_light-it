@@ -37,6 +37,11 @@ export class ApiClient {
     return this.send('POST', '/api/auth/login', body);
   }
 
+  /** The OpenAPI document behind the docs login. The docs page passes the session token as a query parameter. */
+  getOpenApiSpec(token: string): Promise<APIResponse> {
+    return this.request.get('/api-docs.json', { params: { token } });
+  }
+
   logout(): Promise<APIResponse> {
     return this.send('POST', '/api/auth/logout');
   }

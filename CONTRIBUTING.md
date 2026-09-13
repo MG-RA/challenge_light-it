@@ -13,7 +13,7 @@ Before pushing: `npm run format && npm run typecheck && npm run lint && npm test
 | Time zone | `src/support/dates.ts` | All calendar math: `dateAfter`, `appointmentStart`, `isUpcoming`. Never derive a date from `toISOString()`. |
 | Auth | `src/auth/session.ts` | One API login per run (`tests/auth.setup.ts`); the token is reused by API fixtures and seeded into `localStorage.token` for the browser. |
 | API client | `src/api/ApiClient.ts` | One method per endpoint, returning the raw `APIResponse`. No assertions. |
-| Contract | `src/api/contract.ts` + `docs/openapi.json` | Validators compiled from the supplied spec. Never edit the spec or hand-write schemas in tests. |
+| Contract | `src/api/contract.ts`, `src/api/spec.ts` | The setup project downloads the login-protected spec to `.auth/openapi.json` (git-ignored, never committed); validators compile from it on first use. Never hand-write schemas in tests. |
 | DB oracle | `src/db/Db.ts` | Named, parameterized lookups. No SQL in spec files. |
 | Fixtures | `src/fixtures/` | `test` and `expect` with the custom matchers. |
 | Page objects | `src/pages/` | Readonly locators plus actions (`fill`, `login`, `chooseDoctor`), no assertions. Prefer test ids and roles; keep any id, CSS or structural lookup inside the page object. Shared layout (sidebar, page title) is `AppShell`. Specs get page objects from fixtures (`appShell`, `loginPage`, `dashboardPage`, `bookingPage`), not `new`. |

@@ -81,7 +81,7 @@ it carries through into every report:
 
 | Tier | Meaning | On failure |
 |---|---|---|
-| **C — Contract** | Documented in the OpenAPI snapshot: status, type, format, enum, explicitly required field | A defect, no discussion needed |
+| **C — Contract** | Documented in the OpenAPI contract: status, type, format, enum, explicitly required field | A defect, no discussion needed |
 | **P — Policy** | Our stronger expectation: field completeness, persistence after success, no sensitive fields, no write after rejection | A defect *given our policy* — state the policy in the report |
 | **Q — Clarification** | Proposed business rule with no agreed requirement: duplicate prevention, past-date rejection, inactive-doctor rejection, exact rejection status | **Not a release gate** until agreed. Raise as a question |
 
@@ -134,6 +134,11 @@ impossible dates still fail. The published schema is not modified.
 - **Teardown deletes what the test created and verifies absence.** A DELETE is never retried. A paid
   appointment that cannot be deleted is cancelled and annotated as residue.
 - **Config:** `.env` from `.env.example`; secrets never committed; `.auth/` git-ignored.
+- **Contract source:** the OpenAPI document is published behind the API docs login, so it is not
+  committed. The setup project downloads it each run (`GET /api-docs.json` with the session token)
+  and records title, version and SHA-256. Contract checks therefore follow the live published
+  contract; a changed hash between runs is contract drift to review, and a modeled schema that
+  disappears fails every contract check with an explicit message.
 - **One time zone per run:** `TEST_TIMEZONE` (default `UTC`, as in CI) drives both Node date math
   and the browser's `timezoneId`, so "today", "yesterday" and "upcoming" mean the same thing to the
   app and to the oracle on any machine. It is a test setting, not the product's time zone, which is
@@ -296,7 +301,6 @@ disabled — and redaction of local traces and screenshots beyond the matcher (C
 | [QA_PLAN.md](QA_PLAN.md) | Scope, risks, approach, gates and roadmap |
 | [docs/FINDINGS.md](docs/FINDINGS.md) | Prioritized defect register with reproduction and evidence |
 | [test-cases/](test-cases/README.md) | One written case per automated test, with latest results |
-| [docs/openapi.json](docs/openapi.json) | Supplied contract snapshot used by contract validation; never edited |
 
 Keep results in the test cases, defects in FINDINGS, and planned coverage in §10.
 

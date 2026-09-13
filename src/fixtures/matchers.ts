@@ -19,7 +19,7 @@ export const expect = base.extend({
     return { name: 'toHaveStatus', pass, expected, actual, message };
   },
 
-  /** Asserts `received` conforms to a schema from docs/openapi.json (see src/api/contract.ts). */
+  /** Asserts `received` conforms to a component schema of the downloaded OpenAPI contract (see src/api/contract.ts). */
   toMatchSchema(received: unknown, ref: SchemaRef) {
     const errors = schemaErrors(ref, received);
     const pass = errors.length === 0;
