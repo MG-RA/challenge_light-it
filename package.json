@@ -12,7 +12,6 @@
     "test:list": "playwright test --list --reporter=list",
     "test:ui": "playwright test --project=ui",
     "test:api": "playwright test --project=api",
-    "test:db": "playwright test --project=db",
     "test:writes": "playwright test --project=api --grep @mutating",
     "test:headed": "playwright test --project=ui --headed",
     "test:debug": "playwright test --debug",

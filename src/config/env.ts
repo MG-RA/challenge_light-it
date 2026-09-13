@@ -38,8 +38,8 @@ export const env = {
   /** One zone for Node date math and the browser, so "today" and "upcoming" agree on every machine. */
   timezone: timezone('TEST_TIMEZONE', 'UTC'),
 
-  // Credential sections are validated on first access, not at import, so each
-  // layer only needs its own secrets (e.g. `npm run test:db` works without app creds).
+  // Credential sections are validated on first access, not at import, so loading the config or
+  // listing tests (`npm run test:list`) needs no secrets.
   get user() {
     return {
       email: required('APP_USER_EMAIL'),

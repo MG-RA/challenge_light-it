@@ -9,15 +9,15 @@ Before pushing: `npm run typecheck && npm run lint && npm test`.
 
 | Layer | Path | Rule |
 |---|---|---|
-| Env config | `src/config/env.ts` | Every variable goes through a validator. Credential groups are lazy getters, so `npm run test:db` needs no app credentials. |
+| Env config | `src/config/env.ts` | Every variable goes through a validator. Credential groups are lazy getters, so listing tests needs no secrets. |
 | Time zone | `src/support/dates.ts` | All calendar math: `dateAfter`, `appointmentStart`, `isUpcoming`. Never derive a date from `toISOString()`. |
 | Auth | `src/auth/session.ts` | One API login per run (`tests/auth.setup.ts`); the token is reused by API fixtures and seeded into `localStorage.token` for the browser. |
 | API client | `src/api/ApiClient.ts` | One method per endpoint, returning the raw `APIResponse`. No assertions. |
 | Contract | `src/api/contract.ts` + `docs/openapi.json` | Validators compiled from the supplied spec. Never edit the spec or hand-write schemas in tests. |
-| DB oracle | `src/db/Db.ts` | Named, parameterized lookups. No SQL in spec files, except the DB connectivity checks. |
+| DB oracle | `src/db/Db.ts` | Named, parameterized lookups. No SQL in spec files. |
 | Fixtures | `src/fixtures/` | `test` and `expect` with the custom matchers. |
 | Page objects | `src/pages/` | Locators only, no assertions. Prefer test ids and roles; keep any structural lookup inside the page object with a comment saying why. |
-| Specs | `tests/api`, `tests/ui`, `tests/db` | Assertions live here. |
+| Specs | `tests/api`, `tests/ui` | Assertions live here. |
 
 Import `test` and `expect` from `src/fixtures` (or from `tests/api/writes.ts` when a test needs the
 `owned` fixture), never from `@playwright/test`: that loses the custom matchers.

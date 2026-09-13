@@ -49,10 +49,6 @@ export default defineConfig<TestOptions>({
       dependencies: ['setup'],
     },
     {
-      name: 'db',
-      testDir: './tests/db',
-    },
-    {
       name: 'ui',
       testDir: './tests/ui',
       use: { ...devices['Desktop Chrome'], storageState: AUTH_STATE_FILE },

@@ -1,6 +1,6 @@
 # Test cases for the automated suite
 
-One written case for **every Playwright test in the repository**: 85 tests in 16 spec files (`RUN_MUTATING=1 npm run test:list`). Each parameterized loop is expanded, so one case maps to exactly one Playwright test. This folder documents what the automation does; it does not describe planned coverage. Planned work is in the [QA plan](../QA_PLAN.md#10-roadmap), and defects are in [FINDINGS.md](../docs/FINDINGS.md).
+One written case for **every Playwright test in the repository**: 83 tests in 15 spec files (`RUN_MUTATING=1 npm run test:list`). Each parameterized loop is expanded, so one case maps to exactly one Playwright test. This folder documents what the automation does; it does not describe planned coverage. Planned work is in the [QA plan](../QA_PLAN.md#10-roadmap), and defects are in [FINDINGS.md](../docs/FINDINGS.md).
 
 ## Layout
 
@@ -9,7 +9,6 @@ The folder mirrors `tests/`:
 | Case document | Spec file | Cases | Runs in |
 |---|---|---:|---|
 | [auth.setup.md](auth.setup.md) | [tests/auth.setup.ts](../tests/auth.setup.ts) | 1 | default |
-| [db/connection.md](db/connection.md) | [tests/db/connection.spec.ts](../tests/db/connection.spec.ts) | 2 | default |
 | [api/auth.md](api/auth.md) | [tests/api/auth.spec.ts](../tests/api/auth.spec.ts) | 21 | default |
 | [api/users.md](api/users.md) | [tests/api/users.spec.ts](../tests/api/users.spec.ts) | 1 | default |
 | [api/caching.md](api/caching.md) | [tests/api/caching.spec.ts](../tests/api/caching.spec.ts) | 2 | default |
@@ -24,7 +23,7 @@ The folder mirrors `tests/`:
 | [ui/navigation.md](ui/navigation.md) | [tests/ui/navigation.spec.ts](../tests/ui/navigation.spec.ts) | 6 | default |
 | [ui/booking.md](ui/booking.md) | [tests/ui/booking.spec.ts](../tests/ui/booking.spec.ts) | 7 | default |
 | [ui/booking.md](ui/booking.md) | [tests/ui/booking-state.spec.ts](../tests/ui/booking-state.spec.ts) | 1 | `@mutating` |
-| **Total** | | **85** | **69 default, 16 `@mutating`** |
+| **Total** | | **83** | **67 default, 16 `@mutating`** |
 
 Helpers such as `tests/api/writes.ts`, `dbState.ts`, `appointmentResponse.ts` and `knownDefectChecks.ts` contain no tests. Their checks are written into the steps of the cases that use them.
 
@@ -32,9 +31,9 @@ Helpers such as `tests/api/writes.ts`, `dbState.ts`, `appointmentResponse.ts` an
 
 Every case has:
 
-- **ID:** `TC-<AREA>-<NNN>`. IDs are stable: append new ones, never renumber or reuse. Retired: TC-APT-003/004 (folded into TC-APT-001/002), TC-UI-DASH-002/003 (covered by navigation; image size kept as F-13 feedback) and TC-UI-DASH-008 (its pass against a DB snapshot was a coincidence of a static counter, F-23).
+- **ID:** `TC-<AREA>-<NNN>`. IDs are stable: append new ones, never renumber or reuse. Retired: TC-APT-003/004 (folded into TC-APT-001/002), TC-UI-DASH-002/003 (covered by navigation; image size kept as F-13 feedback) TC-UI-DASH-008 (its pass against a DB snapshot was a coincidence of a static counter, F-23) and TC-DB-001/002 (DB connectivity and write denial: environment checks, not product behavior; the DB stays the oracle through the `db` fixture).
 - **Automated test:** spec file and line, plus the exact Playwright title so `--grep` finds it.
-- **Project / tag:** Playwright project (`setup`, `api`, `db`, `ui`), plus `@mutating` when the test writes remote data.
+- **Project / tag:** Playwright project (`setup`, `api`, `ui`), plus `@mutating` when the test writes remote data.
 - **Priority / basis:** **P0** patient isolation and booking/payment integrity, **P1** core behavior and contract, **P2** secondary behavior. A case's priority is how important its coverage is; a finding's priority in [FINDINGS.md](../docs/FINDINGS.md) is fix order. P0 lines up in both: P0 cases guard the risks whose defects are P0 release blockers. **C** means the OpenAPI contract specifies it, **P** is suite policy (DB reconciliation, field completeness), **Q** is a proposed business rule not in the spec; Q expectations are soft assertions.
 - **Finding:** the related [FINDINGS.md](../docs/FINDINGS.md) ID, if any.
 - **Preconditions, test data, steps with expected results, cleanup.**
@@ -54,7 +53,7 @@ Every case has:
 These apply to every case unless the case says otherwise.
 
 1. `.env` provides `BASE_URL`, `API_BASE_URL`, the test account credentials and read-only Postgres credentials. See [.env.example](../.env.example).
-2. The `setup` project (TC-SETUP-001) has logged in once and saved the session. The `api` and `ui` projects depend on it; `db` does not.
+2. The `setup` project (TC-SETUP-001) has logged in once and saved the session. The `api` and `ui` projects depend on it.
 3. The DB user is read-only. Expected values are read from Postgres at run time; seeded IDs are never hard-coded.
 4. `@mutating` cases run only with `RUN_MUTATING=1`, one worker and zero retries; the `owned` fixture enforces this. Every write carries a unique run marker in `notes`, only marker-carrying rows are mutated, and teardown deletes them and verifies absence. Caps are 20 booking and 4 payment submissions per worker process; a failed test restarts the worker and resets them.
 
@@ -64,7 +63,7 @@ Latest recorded result per case, all from 2026-09-13 as described in the [run re
 
 | Result | Cases |
 |---|---:|
-| Pass | 63 |
+| Pass | 61 |
 | Expected failure | 9 (F-01, F-12 UI, F-14 ×2, F-15 ×2, F-20, F-21, F-23 controlled) |
 | Fail | 12 (F-02, F-03, F-04, F-05, F-12 ×2, F-16, F-17, F-18, F-22, F-23 persisted, F-24) |
 | Skipped | 1 (TC-NOT-002: no attributable notification) |
@@ -86,16 +85,15 @@ The default suite (what CI runs) has no ordinary failures: every open finding it
 | 7 | Payment writes, after splitting TC-PAY-002 and adding TC-PAY-003 | `RUN_MUTATING=1 npx playwright test tests/api/payments.spec.ts --project=api --grep @mutating` | 24 s | setup passed, 2 failed (F-18, F-24) |
 | 8 | Default, GitHub Actions, [pull request #1](https://github.com/MG-RA/challenge_light-it/pull/1) at `7b401cf` | [workflow run](https://github.com/MG-RA/challenge_light-it/actions/runs/34776433354) | 35 s | 59 passed, 9 expected failures, 0 failed, 1 skipped; 0 retries |
 | 9 | Default, GitHub Actions, merge to `main` at `9fa8c69` | [workflow run](https://github.com/MG-RA/challenge_light-it/actions/runs/34776679694) | 36 s | 59 passed, 9 expected failures, 0 failed, 1 skipped; 0 retries |
+| 10 | Default, after retiring TC-DB-001/002 | `npx playwright test` | 29 s | 57 passed, 9 expected failures, 0 failed, 1 skipped; exit code 0 |
 
-Run 5 replaced run 1 for the default suite: its only change was moving the five ordinary failures from run 1 (F-12 UI, F-15 ×2, F-21, F-23) behind scoped expected-failure markers, and each still failed with the signature recorded in run 1. Run 6 is the latest local default run; every expected failure kept its signature. Runs 8 and 9 reproduced run 6 exactly on GitHub Actions: the same 9 expected failures and no unexpected, flaky or retried results. Run 7 replaces the payment case from run 2. Each case is counted once (the setup case in run 6), which gives the 85-case summary above. There were no retries, no flaky results and no unexpected passes; every expected failure matched its recorded signature on inspection. After runs 2, 3 and 7, a DB query for `notes like 'qa-suite %'` returned no rows, and no payment residue was created because the valid payment did not persist (F-18). Raw local HTML/JSON reports stay local because local traces and screenshots are not redacted. The CI artifacts of runs 8 and 9 were downloaded and checked: no traces, screenshots, videos, credentials or tokens.
+Run 5 replaced run 1 for the default suite: its only change was moving the five ordinary failures from run 1 (F-12 UI, F-15 ×2, F-21, F-23) behind scoped expected-failure markers, and each still failed with the signature recorded in run 1. Run 10 is the latest local default run; every expected failure kept its signature in runs 6 and 10. Runs 8 and 9 reproduced run 6 exactly on GitHub Actions: the same 9 expected failures and no unexpected, flaky or retried results. Run 7 replaces the payment case from run 2. Each case is counted once (the setup case in run 6), which gives the 83-case summary above (TC-DB-001/002 passed in every run and were retired afterwards). There were no retries, no flaky results and no unexpected passes; every expected failure matched its recorded signature on inspection. After runs 2, 3 and 7, a DB query for `notes like 'qa-suite %'` returned no rows, and no payment residue was created because the valid payment did not persist (F-18). Raw local HTML/JSON reports stay local because local traces and screenshots are not redacted. The CI artifacts of runs 8 and 9 were downloaded and checked: no traces, screenshots, videos, credentials or tokens.
 
 ## Traceability matrix
 
 | Case ID | Playwright test | Project / tag | Finding | Last recorded |
 |---|---|---|---|---|
 | TC-SETUP-001 | authenticate | setup | — | Pass |
-| TC-DB-001 | Database › read-only user can connect and see the app tables | db | — | Pass |
-| TC-DB-002 | Database › DB user cannot write (guards against accidental mutation) | db | — | Pass |
 | TC-AUTH-001 | Auth API › rejects wrong password with 401 | api | — | Pass |
 | TC-AUTH-002 | Auth API › profile rejects a missing token | api | — | Pass |
 | TC-AUTH-003 | Auth API › doctors rejects a missing token | api | — | Pass |

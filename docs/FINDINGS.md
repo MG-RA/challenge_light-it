@@ -336,9 +336,9 @@ These retain their IDs for traceability. They are not confirmed functional bugs 
 
 ## Latest verified controls and remaining gaps
 
-Across all 85 automated cases, the runs of 2026-09-13 recorded **63 passed, 9 expected failures, 12 failed and 1 skipped** ([per-case results](../test-cases/README.md#results-summary)). Every failure reproduces a finding above. Findings reproduced by the default suite (F-01, F-12 UI, F-14, F-15, F-20, F-21, F-23 controlled) are expected failures, so CI stays green until something changes; the opt-in write and rate-limit runs keep ordinary failures. The failure count is not the bug count: F-12 is reproduced by three cases, and F-15 and F-23 by two each.
+Across all 83 automated cases, the runs of 2026-09-13 recorded **61 passed, 9 expected failures, 12 failed and 1 skipped** ([per-case results](../test-cases/README.md#results-summary)). Every failure reproduces a finding above. Findings reproduced by the default suite (F-01, F-12 UI, F-14, F-15, F-20, F-21, F-23 controlled) are expected failures, so CI stays green until something changes; the opt-in write and rate-limit runs keep ordinary failures. The failure count is not the bug count: F-12 is reproduced by three cases, and F-15 and F-23 by two each.
 
-Completed and Cancelled counters update with controlled data after reload. Quick Actions, sidebar destinations, New Appointment, logout with Back/direct-route/reload checks, required fields, malformed email, availability failure/recovery, and simulated 429 feedback pass. DB connection/table access and write denial pass. The earlier point-in-time Upcoming match was insufficient: later change-based tests establish F-23.
+Completed and Cancelled counters update with controlled data after reload. Quick Actions, sidebar destinations, New Appointment, logout with Back/direct-route/reload checks, required fields, malformed email, availability failure/recovery, and simulated 429 feedback pass. The earlier point-in-time Upcoming match was insufficient: later change-based tests establish F-23.
 
 Earlier API runs verified owned data reconciliation, token refusal and selected authorization controls; matching corrupted stored data does not establish a correct profile write. The old expected-failure handling of F-15 and automated image budget no longer describe the current suite.
 

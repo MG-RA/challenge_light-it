@@ -8,7 +8,7 @@ Playwright and TypeScript test suite for MedAppoint, covering the web UI, the RE
 
 - **Verdict: not release-ready.** Two P0 blockers: a payment reports success but is never stored (F-18), and a cancellation reports success but the appointment stays active (F-16). Both were reproduced twice against the database.
 - **16 confirmed bugs** — 2 P0, 4 P1, 8 P2, 2 P3 — plus one historical report awaiting re-verification. Next most urgent: double booking of the same slot (F-03), invalid dates and times accepted and stored (F-02, F-12, F-17).
-- **85 automated tests.** The 69 in the default suite pass in GitHub Actions ([latest run on `main`](https://github.com/MG-RA/challenge_light-it/actions/runs/34776679694)); 9 of them track 7 known bugs as expected failures, so any red run means something changed. 16 opt-in tests write owned, marked data to the shared environment and reproduce the write-path bugs; cleanup is verified in the DB.
+- **83 automated tests.** The 67 in the default suite pass in GitHub Actions ([latest run on `main`](https://github.com/MG-RA/challenge_light-it/actions/runs/34776679694)); 9 of them track 7 known bugs as expected failures, so any red run means something changed. 16 opt-in tests write owned, marked data to the shared environment and reproduce the write-path bugs; cleanup is verified in the DB.
 - **Run it:** `npm ci`, `npx playwright install chromium`, fill `.env` from `.env.example`, then `npm test`.
 
 ## Start here
@@ -22,13 +22,13 @@ Playwright and TypeScript test suite for MedAppoint, covering the web UI, the RE
 
 ## Current state
 
-**Automation:** 85 Playwright tests in 16 files. The default run executes 69; the other 16 write owned data to the shared environment and run only when explicitly enabled.
+**Automation:** 83 Playwright tests in 15 files. The default run executes 67; the other 16 write owned data to the shared environment and run only when explicitly enabled.
 
 **Latest results:** one full run of every suite on 2026-09-13 (default, API writes, UI writes, then the rate-limit check), with the default suite and the payment writes rerun after later changes on the same day:
 
 | Result | Cases |
 |---|---:|
-| Passed | 63 |
+| Passed | 61 |
 | Expected failures (known defects marked `test.fail`) | 9 |
 | Failed, each reproducing a finding (opt-in write and rate-limit runs only) | 12 |
 | Skipped (no attributable notification) | 1 |
@@ -74,7 +74,7 @@ On PowerShell, use `Copy-Item .env.example .env`. Fill in the challenge credenti
 |---|---|---|
 | UI | https://light-it-qa-challenge.vercel.app | `ui` (Chromium) |
 | API | https://qa-challenge-backend.vercel.app | `api` |
-| DB | Supabase Postgres, read-only account | `db`; also the data oracle for API and UI |
+| DB | Supabase Postgres, read-only account | no project of its own; the data oracle for the `api` and `ui` tests |
 
 ## Commands
 
@@ -82,14 +82,13 @@ On PowerShell, use `Copy-Item .env.example .env`. Fill in the challenge credenti
 npm test                # default suite (no remote writes)
 npm run test:api
 npm run test:ui
-npm run test:db
 npm run test:list       # list tests without running them
 npm run typecheck
 npm run lint
 npm run report          # open the last HTML report
 ```
 
-The `api` and `ui` projects share one API login from `tests/auth.setup.ts`; `db` does not need it.
+The `api` and `ui` projects share one API login from `tests/auth.setup.ts`.
 
 **Opt-in runs** (shared live environment, run one at a time):
 
@@ -117,7 +116,6 @@ src/pages/           page objects and the shared sidebar component
 src/support/         calendar math in the suite time zone
 tests/api/           API read cases, opt-in writes, ownership and cleanup helpers
 tests/ui/            login, dashboard, navigation and booking
-tests/db/            connectivity and read-only permission checks
 test-cases/          written test cases, mirroring tests/
 docs/FINDINGS.md     prioritized defect register
 docs/openapi.json    supplied OpenAPI contract snapshot, never edited
@@ -126,6 +124,6 @@ QA_PLAN.md           scope, risks, approach and roadmap
 
 ## Reports and CI
 
-HTML reports go to `playwright-report/`; JSON and JUnit results go to `test-results/`. GitHub Actions ([workflow](.github/workflows/playwright.yml)) runs type checking, lint and the default suite, on pushes to `main`, same-repository pull requests and manual dispatch. It needs repository secrets `APP_USER_EMAIL`, `APP_USER_PASSWORD`, `DB_HOST`, `DB_USER` and `DB_PASSWORD`. The first hosted runs passed on 2026-09-13, for [pull request #1](https://github.com/MG-RA/challenge_light-it/actions/runs/34776433354) and for the [merge to `main`](https://github.com/MG-RA/challenge_light-it/actions/runs/34776679694): 69 tests, 59 passed, 9 expected failures, 1 skipped, no retries. Their logs and artifacts were checked and contain no credentials, tokens, traces or screenshots. Opt-in write and rate-limit results come from local runs; see the [run record](test-cases/README.md#run-record).
+HTML reports go to `playwright-report/`; JSON and JUnit results go to `test-results/`. GitHub Actions ([workflow](.github/workflows/playwright.yml)) runs type checking, lint and the default suite, on pushes to `main`, same-repository pull requests and manual dispatch. It needs repository secrets `APP_USER_EMAIL`, `APP_USER_PASSWORD`, `DB_HOST`, `DB_USER` and `DB_PASSWORD`. The first hosted runs passed on 2026-09-13, for [pull request #1](https://github.com/MG-RA/challenge_light-it/actions/runs/34776433354) and for the [merge to `main`](https://github.com/MG-RA/challenge_light-it/actions/runs/34776679694): 69 tests, 59 passed, 9 expected failures, 1 skipped, no retries (two DB connectivity checks have since been retired). Their logs and artifacts were checked and contain no credentials, tokens, traces or screenshots. Opt-in write and rate-limit results come from local runs; see the [run record](test-cases/README.md#run-record).
 
 Status diagnostics redact response bodies. In CI no traces, screenshots or videos are recorded, because traces carry the session token and artifacts of a public repository are downloadable; CI artifacts hold only reports and assertion messages. Local runs keep all three for failures and can contain account data, so review them before sharing; `.env`, `.auth/` and raw reports are git-ignored.

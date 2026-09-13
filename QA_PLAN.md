@@ -25,7 +25,7 @@ reproduces known defects as *expected* failures, so "all passed" includes reprod
 |---|---|---|
 | API | `https://qa-challenge-backend.vercel.app` | All 17 OpenAPI operations: status, schema, ownership, auth gates, stored effect of writes |
 | UI | `https://light-it-qa-challenge.vercel.app` | Login, access control, dashboard, sidebar navigation, booking journey |
-| DB | Supabase Postgres, read-only account | Independent oracle for API/UI values; connectivity and grant enforcement |
+| DB | Supabase Postgres, read-only account | Independent oracle for API/UI values (no DB-only tests: connectivity is environment setup, not product behavior) |
 
 **Out of scope** — stated so nobody assumes coverage: load and stress testing, broad penetration
 testing, email/SMS delivery, payment-provider internals, database write-path testing, and any test
@@ -144,7 +144,7 @@ impossible dates still fail. The published schema is not modified.
 | Suite | Command | Selection | Concurrency |
 |---|---|---|---|
 | Default regression | `npm test` | `@mutating` excluded by `grepInvert` | 4 workers local, 2 CI; 0 retries local, 1 CI |
-| Per surface | `npm run test:api` / `test:ui` / `test:db` | project filter | as above |
+| Per surface | `npm run test:api` / `test:ui` | project filter | as above |
 | API writes | `RUN_MUTATING=1 npm run test:writes` | `@mutating` in `api` | **1 worker, 0 retries, declaration order, 90 s timeout** |
 | UI writes | `RUN_MUTATING=1 npx playwright test tests/ui/booking-state.spec.ts tests/ui/dashboard-state.spec.ts --project=ui --workers=1` | `@mutating` in `ui` | as above |
 | Rate limit | `RUN_RATE_LIMIT=1 npx playwright test tests/api/rate-limit.spec.ts --project=api --no-deps --workers=1` | one case; skipped otherwise | 1 worker, 0 retries |
@@ -216,10 +216,10 @@ show both.
 
 Discovery on 2026-09-13 (`npm run test:list`):
 
-| Suite | setup | api | db | ui | total |
-|---|---:|---:|---:|---:|---:|
-| Default (`npm test`) | 1 | 34 | 2 | 32 | **69** |
-| With `RUN_MUTATING=1` | 1 | 48 | 2 | 34 | **85** |
+| Suite | setup | api | ui | total |
+|---|---:|---:|---:|---:|
+| Default (`npm test`) | 1 | 34 | 32 | **67** |
+| With `RUN_MUTATING=1` | 1 | 48 | 34 | **83** |
 
 16 write cases (14 API, 2 UI). The default count includes the rate-limit case, which skips unless
 `RUN_RATE_LIMIT=1`. Live endpoint coverage reaches **14 of 17 operations**: `POST /auth/logout` and
@@ -229,7 +229,7 @@ in §10.
 
 **Latest recorded results** (one full run of every suite on 2026-09-13, with the default suite and the
 payment writes rerun after later changes the same day):
-**63 passed, 9 expected failures, 12 failed, 1 skipped**. The default suite exits green; all 12
+**61 passed, 9 expected failures, 12 failed, 1 skipped**. The default suite exits green; all 12
 ordinary failures come from the opt-in runs. Every failure reproduces a finding; no unexpected passes,
 retries or suite errors; write cleanup verified. Per-run
 tallies are in the [run record](test-cases/README.md#run-record) and per-case results in the
