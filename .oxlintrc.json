@@ -13,7 +13,10 @@
     "typescript/await-thenable": "error",
     "typescript/no-misused-promises": "error",
     "typescript/switch-exhaustiveness-check": "error",
-    "playwright/missing-playwright-await": ["error", { "customMatchers": ["toHaveStatus"] }],
+    "playwright/missing-playwright-await": [
+      "error",
+      { "customMatchers": ["toHaveStatus", "toBeInvalid"] }
+    ],
     "playwright/no-focused-test": "error",
     "playwright/no-skipped-test": ["warn", { "allowConditional": true }],
     "playwright/no-page-pause": "error",

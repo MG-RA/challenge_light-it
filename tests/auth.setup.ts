@@ -8,6 +8,6 @@ setup('authenticate', async ({ anonApi, credentials }) => {
   const res = await anonApi.login(credentials);
   await expect(res).toHaveStatus(200);
   const { token } = (await res.json()) as { token: string };
-  expect(token).toBeTruthy();
+  expect(token, 'login response contains a session token').toBeTruthy();
   saveSession(token);
 });

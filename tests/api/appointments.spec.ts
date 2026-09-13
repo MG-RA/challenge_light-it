@@ -31,8 +31,13 @@ test.describe('Appointments API', () => {
         rows.map((a) => a.id),
       );
       for (const appointment of appointments) {
-        expect(appointment.patient_id).toBe(testUser.id);
-        expect(appointment).toMatchObject({ ...rows.find((row) => row.id === appointment.id)! });
+        expect(
+          appointment.patient_id,
+          `appointment ${appointment.id} belongs to the test patient`,
+        ).toBe(testUser.id);
+        expect(appointment, `appointment ${appointment.id} matches its DB row`).toMatchObject({
+          ...rows.find((row) => row.id === appointment.id)!,
+        });
       }
       test.skip(appointments.length === 0, 'No appointments to assess the F-15 date format');
       test.fail(true, 'F-15: only the UTC-midnight date format may fail');
@@ -53,8 +58,10 @@ test.describe('Appointments API', () => {
         appointments: [appointment],
         dateFormatViolations,
       } = await readAppointments(await api.getAppointment(row.id), 'detail');
-      expect(appointment).toMatchObject({ ...row });
-      expect(appointment!.patient_id).toBe(testUser.id);
+      expect(appointment, `appointment ${row.id} detail matches its DB row`).toMatchObject({
+        ...row,
+      });
+      expect(appointment!.patient_id, 'detail belongs to the test patient').toBe(testUser.id);
       test.fail(true, 'F-15: only the UTC-midnight date format may fail');
       expect(dateFormatViolations, 'appointment_date uses the declared date-only format').toEqual(
         [],
@@ -92,7 +99,7 @@ test.describe('Appointments API writes', { tag: '@mutating' }, () => {
     const next = await owned.freeSlot(booked.doctor, booked.row);
     const { appointment_date, time_slot } = next.body;
     const result = await owned.reschedule(booked.id, { appointment_date, time_slot });
-    expect(result.status).toBe(200);
+    expect(result.status, 'reschedule response status').toBe(200);
     await expectStoredAppointment(db, booked.id, testUser.id, {
       appointment_date,
       time_slot,
@@ -111,7 +118,7 @@ test.describe('Appointments API writes', { tag: '@mutating' }, () => {
     const booked = await owned.book();
     const control = await owned.book();
     const result = await owned.cancel(booked.id);
-    expect(result.status).toBe(200);
+    expect(result.status, 'cancel response status').toBe(200);
     await expectStoredAppointment(db, booked.id, testUser.id, {
       id: booked.id,
       status: 'cancelled',
@@ -127,7 +134,7 @@ test.describe('Appointments API writes', { tag: '@mutating' }, () => {
   }) => {
     const booked = await owned.book();
     const result = await owned.remove(booked.id);
-    expect(result.status).toBe(200);
+    expect(result.status, 'delete response status').toBe(200);
     await expectAppointmentGone(db, booked.id, testUser.id);
     await expect(await api.getAppointment(booked.id)).toHaveStatus(404);
   });

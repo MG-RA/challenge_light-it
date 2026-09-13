@@ -19,7 +19,9 @@ test(
         password: 'deliberately-invalid-rate-limit-check',
       });
       statuses.push(response.status());
-      expect([401, 429]).toContain(response.status());
+      expect([401, 429], `failed login attempt ${attempt + 1} is refused or throttled`).toContain(
+        response.status(),
+      );
       if (response.status() === 429) break;
     }
     test.info().annotations.push({

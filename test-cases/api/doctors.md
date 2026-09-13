@@ -35,7 +35,7 @@ Expected values come from `db.activeDoctors()`: `doctors where is_active order b
 
 | Field | Value |
 |---|---|
-| Automated test | [doctors.spec.ts:23](../../tests/api/doctors.spec.ts:23) › `Doctors API › GET /doctors satisfies the field-completeness policy` |
+| Automated test | [doctors.spec.ts:27](../../tests/api/doctors.spec.ts:27) › `Doctors API › GET /doctors satisfies the field-completeness policy` |
 | Project / tag | api / — |
 | Type | Contract (suite policy), known defect |
 | Priority / basis | P1 / P. This is **not** a literal OpenAPI violation. |
@@ -58,7 +58,7 @@ Expected values come from `db.activeDoctors()`: `doctors where is_active order b
 
 | Field | Value |
 |---|---|
-| Automated test | [doctors.spec.ts:39](../../tests/api/doctors.spec.ts:39) › `Doctors API › GET /doctors/:id matches the stored doctor` |
+| Automated test | [doctors.spec.ts:43](../../tests/api/doctors.spec.ts:43) › `Doctors API › GET /doctors/:id matches the stored doctor` |
 | Project / tag | api / — |
 | Type | Functional, contract, data reconciliation |
 | Priority / basis | P1 / C (status, schema, fee as a string), P (completeness, DB values, numeric fee equivalence) |
@@ -83,7 +83,7 @@ Expected values come from `db.activeDoctors()`: `doctors where is_active order b
 
 | Field | Value |
 |---|---|
-| Automated test | [doctors.spec.ts:51](../../tests/api/doctors.spec.ts:51) › `Doctors API › GET /doctors/:id/availability returns valid clock slots` |
+| Automated test | [doctors.spec.ts:62](../../tests/api/doctors.spec.ts:62) › `Doctors API › GET /doctors/:id/availability returns valid clock slots` |
 | Project / tag | api / — |
 | Type | Functional, contract |
 | Priority / basis | P1 / C (200, `time_slots` string array), P (field required, `HH:mm` format, uniqueness) |
@@ -108,7 +108,7 @@ Expected values come from `db.activeDoctors()`: `doctors where is_active order b
 
 | Field | Value |
 |---|---|
-| Automated test | [doctors.spec.ts:64](../../tests/api/doctors.spec.ts:64) › `Doctors API › GET /doctors/:id returns 404 for an unknown doctor` |
+| Automated test | [doctors.spec.ts:80](../../tests/api/doctors.spec.ts:80) › `Doctors API › GET /doctors/:id returns 404 for an unknown doctor` |
 | Project / tag | api / — |
 | Type | Functional, negative |
 | Priority / basis | P1 / C |

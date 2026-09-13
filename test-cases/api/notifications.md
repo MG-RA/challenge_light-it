@@ -33,7 +33,7 @@ Spec: [tests/api/notifications.spec.ts](../../tests/api/notifications.spec.ts) �
 
 | Field | Value |
 |---|---|
-| Automated test | [notifications.spec.ts:29](../../tests/api/notifications.spec.ts:29) › `PUT /notifications/:id/read changes only that read flag and repeats idempotently` |
+| Automated test | [notifications.spec.ts:35](../../tests/api/notifications.spec.ts:35) › `PUT /notifications/:id/read changes only that read flag and repeats idempotently` |
 | Project / tag | api / **@mutating** |
 | Type | Functional, state verification, idempotence |
 | Priority / basis | P1 / C (200), P (only the target flag changes, sibling notifications unchanged), Q (a repeat is 200 with no change) |

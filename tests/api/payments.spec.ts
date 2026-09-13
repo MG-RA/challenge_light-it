@@ -13,10 +13,17 @@ test('GET /payments matches payments for the patient appointments', async ({
   for (const row of rows) {
     const payment = payments.find((p) => p.id === row.id)!;
     const { amount, ...stored } = row;
-    expect(payment).toMatchObject(stored);
-    expect(payment.amount).toMatch(/^-?\d+(?:\.\d+)?$/);
-    expect(Number.isFinite(Number(payment.amount))).toBe(true);
-    expect(Number(payment.amount)).toBe(Number(amount));
+    expect(payment, `payment ${row.id} is listed and matches the DB`).toMatchObject(stored);
+    expect(payment.amount, `payment ${row.id} amount is a decimal string`).toMatch(
+      /^-?\d+(?:\.\d+)?$/,
+    );
+    expect(
+      Number.isFinite(Number(payment.amount)),
+      `payment ${row.id} amount is a finite number`,
+    ).toBe(true);
+    expect(Number(payment.amount), `payment ${row.id} amount equals the DB value`).toBe(
+      Number(amount),
+    );
   }
 });
 
@@ -31,13 +38,16 @@ test(
     expect(Number.isFinite(fee) && fee > 0, 'the doctor has a usable consultation fee').toBe(true);
 
     const valid = await owned.pay(booked.id, { amount: fee, method: 'cash' });
-    expect(valid.status).toBe(200);
+    expect(valid.status, 'valid payment response status').toBe(200);
     expect(valid.before, 'a fresh appointment starts without payments').toEqual([]);
     const [payment] = await expectStoredPayments(db, booked.id, [
       { appointment_id: booked.id, method: 'cash' },
     ]);
-    expect(Number(payment!.amount)).toBe(fee);
-    expect(['pending', 'paid', 'refunded']).toContain(payment!.status);
+    expect(Number(payment!.amount), 'stored amount equals the consultation fee').toBe(fee);
+    expect(
+      ['pending', 'paid', 'refunded'],
+      'stored payment status is a documented value',
+    ).toContain(payment!.status);
     expect(valid.body, 'the response reports the stored payment').toMatchObject({
       success: true,
       payment_id: payment!.id,

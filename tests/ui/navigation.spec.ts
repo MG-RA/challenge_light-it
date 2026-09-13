@@ -39,7 +39,7 @@ test('sidebar logout clears the session and protects routes after reload and bac
   await appShell.sidebar.logoutButton.click();
 
   await expect(page).toHaveURL(/\/login$/);
-  expect(await storedToken(page)).toBeNull();
+  expect(await storedToken(page), 'session token after logout').toBeNull();
 
   await page.goBack();
   await expect(page).toHaveURL(/\/login$/);

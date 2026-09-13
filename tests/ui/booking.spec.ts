@@ -17,11 +17,16 @@ test('booking loads the selected doctor availability into time options without s
 
   for (const doctor of doctors) {
     const response = await bookingPage.chooseDoctorAndWaitForSlots(doctor.id);
-    expect(response.status()).toBe(200);
+    expect(response.status(), `availability status for doctor ${doctor.id}`).toBe(200);
     const body: unknown = await response.json();
-    expect(body).toEqual(expect.objectContaining({ time_slots: expect.any(Array) }));
+    expect(body, `availability body for doctor ${doctor.id}`).toEqual(
+      expect.objectContaining({ time_slots: expect.any(Array) }),
+    );
     const slots = (body as { time_slots: string[] }).time_slots;
-    for (const slot of slots) expect(slot).toMatch(/^(?:[01]\d|2[0-3]):[0-5]\d$/);
+    for (const slot of slots)
+      expect(slot, `time slot ${JSON.stringify(slot)} is HH:mm`).toMatch(
+        /^(?:[01]\d|2[0-3]):[0-5]\d$/,
+      );
     await expect(bookingPage.slots).toHaveText(slots);
   }
 });
@@ -49,8 +54,8 @@ for (const { missing, form } of requiredFields) {
 
     const field = bookingPage.field(missing);
     await expect(field).toBeFocused();
-    expect(await field.evaluate((input: HTMLInputElement) => input.validity.valid)).toBe(false);
-    expect(submissions.count).toBe(0);
+    await expect(field).toBeInvalid();
+    expect(submissions.count, 'booking submissions sent').toBe(0);
     await expect(page).toHaveURL(/\/appointments\/new$/);
   });
 }
@@ -109,9 +114,7 @@ test(
 
     test.fail(true, 'F-12: only the missing past-date validation may fail');
     await expect(bookingPage.date).toBeFocused();
-    expect(
-      await bookingPage.date.evaluate((input: HTMLInputElement) => input.validity.rangeUnderflow),
-    ).toBe(true);
-    expect(submissions.count).toBe(0);
+    await expect(bookingPage.date).toBeInvalid('rangeUnderflow');
+    expect(submissions.count, 'booking submissions sent').toBe(0);
   },
 );

@@ -23,7 +23,7 @@ test.describe('Login page', () => {
   test('invalid password keeps the user on /login', async ({ page, loginPage, credentials }) => {
     const response = await loginPage.loginAndWaitForResponse(credentials.email, 'definitely-wrong');
 
-    expect(response.status()).toBe(401);
+    expect(response.status(), 'login response status for a wrong password').toBe(401);
     await expect(loginPage.errorMessage).toBeVisible();
     await expect(loginPage.submitButton).toBeEnabled();
     await expect(page).toHaveURL(/\/login$/);
@@ -57,8 +57,8 @@ for (const { scenario, email, password, invalid } of invalidLogins) {
 
     const field = loginPage[invalid];
     await expect(field).toBeFocused();
-    expect(await field.evaluate((input: HTMLInputElement) => input.validity.valid)).toBe(false);
-    expect(submissions.count).toBe(0);
+    await expect(field).toBeInvalid();
+    expect(submissions.count, 'login requests sent').toBe(0);
     await expect(page).toHaveURL(/\/login$/);
   });
 }

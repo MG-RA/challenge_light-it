@@ -18,7 +18,7 @@ test.describe('HTTP caching', () => {
           endpoint === 'profile' ? 'User' : 'Appointment[]',
         );
         test.fail(true, 'F-14: only the known public-cache assertion below may fail');
-        expect(header).not.toMatch(/\bpublic\b/i);
+        expect(header, 'Cache-Control has no public directive').not.toMatch(/\bpublic\b/i);
       },
     );
   }

@@ -35,6 +35,12 @@ Import `test` and `expect` from `src/fixtures` (or from `tests/api/writes.ts` wh
     the two failed when you report it.
 - **Label the basis:** C (in the contract), P (suite policy) or Q (proposed business rule). A Q
   expectation uses `expect.soft` with a message saying it is proposed; state checks stay hard.
+- **Every non-locator assertion carries a message** saying what it checks, e.g.
+  `expect(result.status, 'cancel response status').toBe(200)`. Inside loops, name the record:
+  `` `payment ${row.id} amount equals the DB value` ``. Locator assertions already print their
+  `describe()` label, and `toHaveStatus` prints the URL and redacted body.
+- **Form validation:** `await expect(field).toBeInvalid()` or `toBeInvalid('rangeUnderflow')`; the
+  failure names the field and lists the constraints that actually fail.
 - **Web-first UI assertions only.** `waitForTimeout`, `networkidle`, `page.pause` and focused tests
   fail lint.
 - **Decimals arrive as strings:** compare `Number(a) === Number(b)`.

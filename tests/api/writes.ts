@@ -45,9 +45,14 @@ export class OwnedData {
     const response = await this.api.getDoctorAvailability(selected.id);
     await expect(response).toHaveStatus(200);
     const body: unknown = await response.json();
-    expect(body).toEqual(expect.objectContaining({ time_slots: expect.any(Array) }));
+    expect(body, `availability body for doctor ${selected.id}`).toEqual(
+      expect.objectContaining({ time_slots: expect.any(Array) }),
+    );
     const slots = (body as { time_slots: unknown[] }).time_slots;
-    for (const slot of slots) expect(slot).toMatch(/^(?:[01]\d|2[0-3]):[0-5]\d$/);
+    for (const slot of slots)
+      expect(slot, `time slot ${JSON.stringify(slot)} is HH:mm`).toMatch(
+        /^(?:[01]\d|2[0-3]):[0-5]\d$/,
+      );
     const occupied = await this.db.occupiedSlots(selected.id, dateAfter(1), dateAfter(30));
     const start = randomInt(30);
     for (let offset = 0; offset < 30; offset++) {
@@ -106,8 +111,15 @@ export class OwnedData {
     expect(created.status, 'create an appointment at a free slot').toBe(201);
     expect(created.rows, 'exactly one row per accepted create').toHaveLength(1);
     const row = created.rows[0]!;
-    expect(row).toMatchObject({ ...slot.body, patient_id: this.ownerId, notes: created.marker });
-    expect(['active', 'pending', 'completed', 'cancelled']).toContain(row.status);
+    expect(row, 'stored row matches the submitted booking').toMatchObject({
+      ...slot.body,
+      patient_id: this.ownerId,
+      notes: created.marker,
+    });
+    expect(
+      ['active', 'pending', 'completed', 'cancelled'],
+      'stored status is a documented value',
+    ).toContain(row.status);
     return { ...created, doctor: slot.doctor, row, id: row.id };
   }
 

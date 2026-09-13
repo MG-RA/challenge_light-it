@@ -18,8 +18,12 @@ test(
     await expect
       .soft(counter, 'counter increases after persisted booking and reload')
       .toHaveText(String(before + 1));
-    expect((await owned.remove(booked.id)).status).toBe(200);
-    await expect.poll(() => db.stateAppointment(booked.id, testUser.id)).toBeUndefined();
+    expect((await owned.remove(booked.id)).status, 'delete response status').toBe(200);
+    await expect
+      .poll(() => db.stateAppointment(booked.id, testUser.id), {
+        message: `appointment ${booked.id} is removed from the DB`,
+      })
+      .toBeUndefined();
     expect(await upcoming(), 'DB count restored').toBe(before);
     await page.reload();
     await expect

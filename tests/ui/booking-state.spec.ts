@@ -9,7 +9,7 @@ test(
     await bookingPage.goto();
     await bookingPage.date.fill(booked.row.appointment_date);
     const availability = await bookingPage.chooseDoctorAndWaitForSlots(booked.row.doctor_id);
-    expect(availability.status()).toBe(200);
+    expect(availability.status(), 'availability response status').toBe(200);
 
     const option = bookingPage.slot(booked.row.time_slot);
     await expect(async () => {

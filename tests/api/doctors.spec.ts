@@ -6,10 +6,14 @@ test.describe('Doctors API', () => {
     const doctors = await expectJson(await api.listDoctors(), 200, 'Doctor[]');
     const dbActive = await db.activeDoctors();
     // Raw schema properties are optional; explicitly require the identity used for reconciliation.
-    for (const doctor of doctors) expect(doctor.id).toEqual(expect.any(Number));
+    for (const doctor of doctors)
+      expect(doctor.id, 'every listed doctor has a numeric id').toEqual(expect.any(Number));
     expect(doctors.map((d) => d.id!).toSorted((a, b) => a - b)).toEqual(dbActive.map((d) => d.id));
     for (const row of dbActive) {
-      expect(doctors.find((d) => d.id === row.id)).toMatchObject({
+      expect(
+        doctors.find((d) => d.id === row.id),
+        `active doctor ${row.id} is listed and matches the DB`,
+      ).toMatchObject({
         id: row.id,
         first_name: row.first_name,
         last_name: row.last_name,
@@ -42,10 +46,17 @@ test.describe('Doctors API', () => {
     if (!row) return;
     const doctor = await expectCompleteJson(await api.getDoctor(row.id), 200, 'Doctor');
     const { consultation_fee, ...stored } = row;
-    expect(doctor).toMatchObject(stored);
-    expect(doctor.consultation_fee).toMatch(/^-?\d+(?:\.\d+)?$/);
-    expect(Number.isFinite(Number(doctor.consultation_fee))).toBe(true);
-    expect(Number(doctor.consultation_fee)).toBe(Number(consultation_fee));
+    expect(doctor, `doctor ${row.id} matches its DB row`).toMatchObject(stored);
+    expect(doctor.consultation_fee, 'consultation_fee is a decimal string').toMatch(
+      /^-?\d+(?:\.\d+)?$/,
+    );
+    expect(
+      Number.isFinite(Number(doctor.consultation_fee)),
+      'consultation_fee is a finite number',
+    ).toBe(true);
+    expect(Number(doctor.consultation_fee), 'consultation_fee equals the DB value').toBe(
+      Number(consultation_fee),
+    );
   });
 
   test('GET /doctors/:id/availability returns valid clock slots', async ({ api, db }) => {
@@ -55,9 +66,14 @@ test.describe('Doctors API', () => {
     const response = await api.getDoctorAvailability(row.id);
     await expect(response).toHaveStatus(200);
     const body: unknown = await response.json();
-    expect(body).toEqual(expect.objectContaining({ time_slots: expect.any(Array) }));
+    expect(body, 'availability body has a time_slots array').toEqual(
+      expect.objectContaining({ time_slots: expect.any(Array) }),
+    );
     const slots = (body as { time_slots: unknown[] }).time_slots;
-    for (const slot of slots) expect(slot).toMatch(/^(?:[01]\d|2[0-3]):[0-5]\d$/);
+    for (const slot of slots)
+      expect(slot, `time slot ${JSON.stringify(slot)} is HH:mm`).toMatch(
+        /^(?:[01]\d|2[0-3]):[0-5]\d$/,
+      );
     expect(new Set(slots).size, 'no duplicate slots').toBe(slots.length);
   });
 

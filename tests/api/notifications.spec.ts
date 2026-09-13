@@ -16,12 +16,18 @@ test('GET /notifications contains only the user records and maps isRead to is_re
   expect(notifications.map((n) => n.id).toSorted((a, b) => a - b)).toEqual(rows.map((n) => n.id));
   for (const row of rows) {
     const { is_read, ...stored } = row;
-    expect(notifications.find((n) => n.id === row.id)).toMatchObject({
+    expect(
+      notifications.find((n) => n.id === row.id),
+      `notification ${row.id} is listed and matches the DB`,
+    ).toMatchObject({
       ...stored,
       isRead: is_read,
     });
   }
-  for (const notification of notifications) expect(notification.user_id).toBe(testUser.id);
+  for (const notification of notifications)
+    expect(notification.user_id, `notification ${notification.id} belongs to the test user`).toBe(
+      testUser.id,
+    );
 });
 
 // Existing notifications are never changed: only a new one this run can be
@@ -53,7 +59,10 @@ test(
           200,
           'Notification[]',
         );
-        expect(notifications.find((n) => n.id === target.id)?.isRead).toBe(true);
+        expect(
+          notifications.find((n) => n.id === target.id)?.isRead,
+          `notification ${target.id} is read in the API`,
+        ).toBe(true);
       });
     }
   },
