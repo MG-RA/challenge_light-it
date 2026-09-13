@@ -35,12 +35,16 @@ jobs:
       - run: npx playwright install --with-deps chromium
 
       # Secrets are scoped to this step only, not to install scripts run by `npm ci`.
+      # Non-secret settings read a repository variable first, then a secret of the same name;
+      # variables keep URLs readable in logs, while secret values are masked as ***.
+      # A missing value fails fast in src/config/env.ts.
       - run: npx playwright test
         env:
-          BASE_URL: https://light-it-qa-challenge.vercel.app
-          API_BASE_URL: https://qa-challenge-backend.vercel.app
-          DB_PORT: '6543'
-          DB_NAME: postgres
+          BASE_URL: ${{ vars.BASE_URL || secrets.BASE_URL }}
+          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
+          DB_PORT: ${{ vars.DB_PORT || secrets.DB_PORT }}
+          DB_NAME: ${{ vars.DB_NAME || secrets.DB_NAME }}
+          TEST_TIMEZONE: ${{ vars.TEST_TIMEZONE }}
           APP_USER_EMAIL: ${{ secrets.APP_USER_EMAIL }}
           APP_USER_PASSWORD: ${{ secrets.APP_USER_PASSWORD }}
           DB_HOST: ${{ secrets.DB_HOST }}
