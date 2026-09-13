@@ -8,19 +8,70 @@
   "rules": {
     // Playwright fixtures must destructure their first param, even when empty: `async ({}, use) => ...`
     "no-empty-pattern": "off",
+    "no-nested-ternary": "error",
     "typescript/no-floating-promises": "error",
     "typescript/await-thenable": "error",
     "typescript/no-misused-promises": "error",
+    "typescript/switch-exhaustiveness-check": "error",
     "playwright/missing-playwright-await": ["error", { "customMatchers": ["toHaveStatus"] }],
     "playwright/no-focused-test": "error",
     "playwright/no-skipped-test": ["warn", { "allowConditional": true }],
     "playwright/no-page-pause": "error",
     "playwright/no-wait-for-timeout": "error",
+    "playwright/no-wait-for-selector": "error",
+    "playwright/no-wait-for-navigation": "error",
     "playwright/no-networkidle": "error",
     "playwright/no-useless-await": "error",
+    "playwright/no-useless-not": "error",
+    "playwright/no-force-option": "error",
+    "playwright/no-eval": "error",
+    "playwright/no-element-handle": "error",
+    "playwright/no-nth-methods": "error",
+    "playwright/no-unsafe-references": "error",
+    "playwright/no-commented-out-tests": "error",
+    "playwright/no-duplicate-hooks": "error",
+    "playwright/prefer-hooks-on-top": "error",
     "playwright/prefer-web-first-assertions": "error",
+    "playwright/prefer-native-locators": "error",
+    "playwright/prefer-to-be": "error",
+    "playwright/prefer-to-contain": "error",
+    "playwright/prefer-to-have-count": "error",
+    "playwright/prefer-to-have-length": "error",
+    "playwright/prefer-comparison-matcher": "error",
+    "playwright/prefer-equality-matcher": "error",
+    "playwright/consistent-spacing-between-blocks": "error",
+    "playwright/valid-describe-callback": "error",
     "playwright/valid-expect": "error",
     "playwright/valid-title": "error",
     "playwright/no-standalone-expect": "error"
-  }
+  },
+  "overrides": [
+    {
+      // Specs describe behavior; locators, network stubs and matchers come from src/.
+      "files": ["tests/**/*.ts"],
+      "rules": {
+        "playwright/no-raw-locators": "error",
+        "typescript/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@playwright/test",
+                "message": "Import test/expect from src/fixtures (or tests/api/writes.ts) to keep the custom matchers.",
+                "allowTypeImports": true
+              }
+            ]
+          }
+        ],
+        "no-restricted-properties": [
+          "error",
+          {
+            "object": "page",
+            "property": "route",
+            "message": "Use the apiMocks fixture (src/mocks/ApiMocks.ts) instead of page.route."
+          }
+        ]
+      }
+    }
+  ]
 }

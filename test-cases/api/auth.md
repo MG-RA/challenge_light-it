@@ -244,7 +244,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:66](../../tests/api/auth.spec.ts:66) › `Authorization boundaries › appointment detail refuses another patient's appointment` |
+| Automated test | [auth.spec.ts:65](../../tests/api/auth.spec.ts:65) › `Authorization boundaries › appointment detail refuses another patient's appointment` |
 | Project / tag | api / — |
 | Basis | C (403 is documented for this operation), P (no data in the refusal) |
 | Precondition | An appointment owned by a different patient exists. Otherwise the case is skipped. |
@@ -260,7 +260,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:82](../../tests/api/auth.spec.ts:82) › `Authorization boundaries › profile rejects a token whose user_id was altered` |
+| Automated test | [auth.spec.ts:81](../../tests/api/auth.spec.ts:81) › `Authorization boundaries › profile rejects a token whose user_id was altered` |
 | Project / tag | api / — |
 | Basis | C (401 is documented for this route) |
 | Precondition | Another patient exists. Otherwise the case is skipped. |
@@ -276,7 +276,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:100](../../tests/api/auth.spec.ts:100) › `Authorization boundaries › profile rejects a token with an alg:none header` |
+| Automated test | [auth.spec.ts:99](../../tests/api/auth.spec.ts:99) › `Authorization boundaries › profile rejects a token with an alg:none header` |
 | Project / tag | api / — |
 | Basis | C |
 | Last recorded | Pass (2026-09-13) |
@@ -290,7 +290,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:105](../../tests/api/auth.spec.ts:105) › `Authorization boundaries › profile answers an empty-signature token with the documented 401` |
+| Automated test | [auth.spec.ts:104](../../tests/api/auth.spec.ts:104) › `Authorization boundaries › profile answers an empty-signature token with the documented 401` |
 | Project / tag | api / — |
 | Basis | C |
 | Finding | [F-20](../../docs/FINDINGS.md) |

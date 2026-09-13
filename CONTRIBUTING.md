@@ -41,6 +41,19 @@ Import `test` and `expect` from `src/fixtures` (or from `tests/api/writes.ts` wh
 - **Skip with narrowing:** `test.skip(!row, 'reason'); if (!row) return;`.
 - **Never echo raw response bodies.** Diagnostics go through `src/fixtures/redact.ts`.
 
+## Lint and format
+
+`npm run lint` (oxlint, type-aware, with the Playwright plugin) and `npm run format:check` (Prettier)
+both run in CI. Beyond correctness, lint enforces the conventions above:
+
+- Everywhere: no nested ternaries, no `waitForTimeout`/`networkidle`/`page.pause`, no forced
+  actions, element handles or `nth()`, web-first assertions, awaited `toHaveStatus`, and a blank line
+  between tests and hooks.
+- In `tests/**` only: no raw `page.locator()` (add it to a page object), no `page.route` (use
+  `apiMocks`), and no value imports from `@playwright/test` (type imports are fine).
+
+If a rule fights a real need, change the page object or helper rather than disabling the rule inline.
+
 ## Known defects
 
 Never widen the spec or loosen a check to accommodate a bug.

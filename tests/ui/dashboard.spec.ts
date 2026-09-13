@@ -6,6 +6,7 @@ test.describe('Dashboard', () => {
     await dashboardPage.goto();
     await expect(dashboardPage.greeting).toContainText(testUser.first_name);
   });
+
   for (const [label, path, heading] of [
     ['Book', '/appointments/new', 'Book Appointment'],
     ['Doctors', '/doctors', 'Doctors'],
@@ -19,6 +20,7 @@ test.describe('Dashboard', () => {
       await expect(appShell.pageTitle(heading)).toBeVisible();
     });
   }
+
   // Point-in-time only for counters proven to follow data (TC-UI-DASH-014/015). The Upcoming variant was
   // retired: its counter is static (F-23), so a match with the DB was coincidence, not evidence.
   for (const [status, label] of [
@@ -32,6 +34,7 @@ test.describe('Dashboard', () => {
       await expect(dashboardPage.counter(label)).toHaveText(String(count));
     });
   }
+
   test(
     'next appointment is the earliest future active or pending record',
     {
@@ -69,6 +72,7 @@ test.describe('Dashboard', () => {
       );
     },
   );
+
   test('next appointment View all opens appointment history', async ({
     page,
     dashboardPage,
@@ -94,6 +98,7 @@ for (const [label, expected, finding] of [
         },
       }
     : {};
+
   test(
     `dashboard ${label} counter updates when appointment data changes`,
     details,

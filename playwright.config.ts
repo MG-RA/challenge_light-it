@@ -8,6 +8,8 @@ import type { TestOptions } from './src/fixtures';
 const mutating = mutationsEnabled(process.env.RUN_MUTATING);
 // Discovery must never replace the last executed HTML/JSON report.
 const listing = process.argv.includes('--list');
+// Shared remote env + rate-limited login: keep concurrency modest.
+const parallelWorkers = process.env.CI ? 2 : 4;
 
 export default defineConfig<TestOptions>({
   testDir: './tests',
@@ -16,8 +18,7 @@ export default defineConfig<TestOptions>({
   forbidOnly: !!process.env.CI,
   grepInvert: mutating ? undefined : /@mutating/,
   retries: mutating || !process.env.CI ? 0 : 1,
-  // Shared remote env + rate-limited login: keep concurrency modest.
-  workers: mutating ? 1 : process.env.CI ? 2 : 4,
+  workers: mutating ? 1 : parallelWorkers,
   reporter: listing
     ? [['list']]
     : [

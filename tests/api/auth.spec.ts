@@ -48,13 +48,12 @@ test.describe('Auth API', () => {
         );
         if (!row) return;
         const client = anonApi.withToken(token);
-        const response =
-          endpoint === 'doctor detail'
-            ? await client.getDoctor(row.id)
-            : endpoint === 'doctor availability'
-              ? await client.getDoctorAvailability(row.id)
-              : await client.getAppointment(row.id);
-        await expect(response).toHaveStatus(401);
+        const readDetail: Record<typeof endpoint, () => ReturnType<ApiClient['getMe']>> = {
+          'doctor detail': () => client.getDoctor(row.id),
+          'doctor availability': () => client.getDoctorAvailability(row.id),
+          'appointment detail': () => client.getAppointment(row.id),
+        };
+        await expect(await readDetail[endpoint]()).toHaveStatus(401);
       });
     }
   }
