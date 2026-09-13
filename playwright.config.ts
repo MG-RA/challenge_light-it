@@ -6,6 +6,8 @@ import type { TestOptions } from './src/fixtures';
 
 // Tests tagged @mutating write owned records on the shared target; RUN_MUTATING=1 selects them.
 const mutating = mutationsEnabled(process.env.RUN_MUTATING);
+// Discovery must never replace the last executed HTML/JSON report.
+const listing = process.argv.includes('--list');
 
 export default defineConfig<TestOptions>({
   testDir: './tests',
@@ -16,7 +18,7 @@ export default defineConfig<TestOptions>({
   retries: mutating || !process.env.CI ? 0 : 1,
   // Shared remote env + rate-limited login: keep concurrency modest.
   workers: mutating ? 1 : (process.env.CI ? 2 : 4),
-  reporter: [
+  reporter: listing ? [['list']] : [
     ['list'],
     ['html', { open: 'never' }],
     ['json', { outputFile: 'test-results/results.json' }],

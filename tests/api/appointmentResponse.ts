@@ -5,8 +5,8 @@ import { expect } from '../../src/fixtures/matchers';
 
 /**
  * F-15 compatibility for data/header tests only. The API serializes dates as exact
- * UTC-midnight timestamps. Dedicated raw-contract tests keep that deviation red
- * (expected failure). Do not accept other datetime formats or weaken the spec.
+ * UTC-midnight timestamps. The list/detail reconciliation tests also assert these violations with soft
+ * assertions, keeping contract drift visible without duplicating test cases. Do not accept other datetime formats or weaken the spec.
  */
 export async function readAppointments(response: APIResponse, kind: 'list' | 'detail') {
   await expect(response).toHaveStatus(200);

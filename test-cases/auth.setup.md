@@ -12,9 +12,8 @@ Spec: [tests/auth.setup.ts](../tests/auth.setup.ts) · Project: `setup`
 | Project / tag | setup / — |
 | Type | Functional, prerequisite |
 | Priority / basis | P1 / C, P |
-| Catalog | API-AUTH-01 (partial: token issuance only) |
 | Finding | — |
-| Last recorded | Pass (2026-09-12 default and write runs) |
+| Last recorded | Pass (2026-09-13) |
 
 **Purpose.** Login is rate-limited (documented 429). The suite therefore logs in once per run and reuses the JWT for API fixtures. It also seeds the token into the browser's `localStorage.token` for UI tests.
 
@@ -32,4 +31,4 @@ Spec: [tests/auth.setup.ts](../tests/auth.setup.ts) · Project: `setup`
 
 **Postconditions:** the session file exists for dependent projects. No remote data changes.
 
-**Not covered here (planned):** token schema validation, using the token on `/users/me` in the same case, unknown email, missing fields, and rate limiting (API-AUTH-01/03/05).
+**Not covered here:** token schema validation, using the token on `/users/me` in the same case, unknown email and missing fields. Failed-login throttling is TC-AUTH-RATE-001 in [rate-limit.md](api/rate-limit.md).

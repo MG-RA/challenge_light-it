@@ -4,5 +4,5 @@ node_modules/
 test-results/
 playwright-report/
 blob-report/
-state-results/
 playwright/.cache/
+.claude/

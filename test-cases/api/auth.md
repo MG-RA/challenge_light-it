@@ -2,7 +2,7 @@
 
 Spec: [tests/api/auth.spec.ts](../../tests/api/auth.spec.ts) · Project: `api` (depends on `setup`)
 
-Contains 1 login-rejection case, 16 auth-gate cases and 4 authorization-boundary cases. The gate cases come from the loop at [auth.spec.ts:10](../../tests/api/auth.spec.ts:10): 2 token modes × 8 protected GET operations.
+Contains 1 login-rejection case, 16 auth-gate cases and 4 authorization-boundary cases. The gate cases come from the loops at [auth.spec.ts:11](../../tests/api/auth.spec.ts:11): 2 token modes × 8 protected GET operations.
 
 ## Shared details for the auth-gate cases (TC-AUTH-002 … 017)
 
@@ -10,10 +10,9 @@ Contains 1 login-rejection case, 16 auth-gate cases and 4 authorization-boundary
 |---|---|
 | Type | Security, access control |
 | Priority / basis | P0 / C (access denied), Q (exact 401 is documented only for `GET /api/users/me`, and the suite applies 401 to all protected GETs) |
-| Catalog | API-SEC-01 |
 | Client | `anonApi.withToken(token)` sends no stored credentials. |
 | Token modes | **missing**: `token = undefined`, so no `Authorization` header is sent. **malformed**: `Authorization: Bearer not-a-jwt`. |
-| Last recorded | Pass for all 16 (2026-09-12) |
+| Last recorded | Pass for all 16 (2026-09-13) |
 
 Cases for routes with an ID (doctor detail, doctor availability, appointment detail) look up a **real** ID in the DB first. This makes sure a 401 comes from the auth gate and not from a missing resource. If no row exists, the case is **skipped** and not passed.
 
@@ -27,8 +26,8 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 | Project / tag | api / — |
 | Type | Security, negative |
 | Priority / basis | P1 / C |
-| Catalog / finding | API-AUTH-02 (known email variant only) / — |
-| Last recorded | Pass (2026-09-12) |
+| Finding | — |
+| Last recorded | Pass (2026-09-13) |
 
 **Preconditions:** the configured account exists, and the login rate limit is not exhausted. This case adds one login attempt.
 
@@ -46,7 +45,6 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 |---|---|
 | Automated test | [auth.spec.ts:14](../../tests/api/auth.spec.ts:14) › `Auth API › profile rejects a missing token` |
 | Project / tag | api / — |
-| Catalog | API-SEC-01, API-USR-03 (401 is documented for this route) |
 
 | # | Action | Expected result |
 |---|---|---|
@@ -143,7 +141,6 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 |---|---|
 | Automated test | [auth.spec.ts:14](../../tests/api/auth.spec.ts:14) › `Auth API › profile rejects a malformed token` |
 | Project / tag | api / — |
-| Catalog | API-SEC-01, API-USR-03 |
 
 | # | Action | Expected result |
 |---|---|---|
@@ -240,7 +237,6 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 |---|---|
 | Type | Security, access control |
 | Priority | P0 |
-| Catalog | API-APT-14, API-SEC-02 (profile only) |
 | Data | Another patient's appointment and `patient_id` come from `db.otherPatientAppointment(testUser.id)`. Forged tokens are built from the session token with [`forgeJwt`](../../src/auth/jwt.ts). No secret is guessed, and no request uses another account's credentials. |
 | Mutation | None. The cases do not log in. |
 
@@ -252,7 +248,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 | Project / tag | api / — |
 | Basis | C (403 is documented for this operation), P (no data in the refusal) |
 | Precondition | An appointment owned by a different patient exists. Otherwise the case is skipped. |
-| Last recorded | Pass (2026-09-12) |
+| Last recorded | Pass (2026-09-13) |
 
 | # | Action | Expected result |
 |---|---|---|
@@ -268,7 +264,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 | Project / tag | api / — |
 | Basis | C (401 is documented for this route) |
 | Precondition | Another patient exists. Otherwise the case is skipped. |
-| Last recorded | Pass (2026-09-12) |
+| Last recorded | Pass (2026-09-13) |
 
 | # | Action | Expected result |
 |---|---|---|
@@ -283,7 +279,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 | Automated test | [auth.spec.ts:67](../../tests/api/auth.spec.ts:67) › `Authorization boundaries › profile rejects a token with an alg:none header` |
 | Project / tag | api / — |
 | Basis | C |
-| Last recorded | Pass (2026-09-12) |
+| Last recorded | Pass (2026-09-13) |
 
 | # | Action | Expected result |
 |---|---|---|
@@ -298,7 +294,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 | Project / tag | api / — |
 | Basis | C |
 | Finding | [F-20](../../docs/FINDINGS.md) |
-| Last recorded | Expected failure F-20 (2026-09-12) |
+| Last recorded | Expected failure F-20 (2026-09-13) |
 
 | # | Action | Expected result |
 |---|---|---|
@@ -307,4 +303,4 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 ---
 
-**Not covered by this file (planned in the catalog):** expired tokens and tampered tokens on the other 15 operations (API-SEC-02), unknown email, login validation and rate limit (API-AUTH-02/03/05), logout (API-AUTH-06/07), and auth gates on the 8 protected **write** operations.
+**Not covered by this file:** expired tokens, tampered tokens on the other 15 operations, unknown email, login field validation, server-side logout revocation, and auth gates on the 8 protected **write** operations. Failed-login throttling is TC-AUTH-RATE-001 in [rate-limit.md](rate-limit.md).

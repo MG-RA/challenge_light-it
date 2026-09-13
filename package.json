@@ -9,6 +9,7 @@
   },
   "scripts": {
     "test": "playwright test",
+    "test:list": "playwright test --list --reporter=list",
     "test:ui": "playwright test --project=ui",
     "test:api": "playwright test --project=api",
     "test:db": "playwright test --project=db",

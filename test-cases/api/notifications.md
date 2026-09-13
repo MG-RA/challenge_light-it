@@ -12,8 +12,8 @@ Spec: [tests/api/notifications.spec.ts](../../tests/api/notifications.spec.ts) Â
 | Project / tag | api / â€” |
 | Type | Functional, data isolation, data reconciliation |
 | Priority / basis | P0 / C (200, `Notification[]`, camelCase `isRead` boolean), P (completeness, exact owned ID set, DB values) |
-| Catalog / finding | API-NOT-01, API-NOT-02 / F-10 (API `isRead` versus DB `is_read`) |
-| Last recorded | Pass (2026-09-12) |
+| Finding | F-10 (API `isRead` versus DB `is_read`) |
+| Last recorded | Pass (2026-09-13) |
 
 **Preconditions:** a valid session token. An empty list is valid.
 
@@ -37,7 +37,7 @@ Spec: [tests/api/notifications.spec.ts](../../tests/api/notifications.spec.ts) Â
 | Project / tag | api / **@mutating** |
 | Type | Functional, state verification, idempotence |
 | Priority / basis | P1 / C (200), P (only the target flag changes, sibling notifications unchanged), Q (a repeat is 200 with no change) |
-| Catalog / finding | API-NOT-04, API-NOT-05 / â€” |
+| Finding | â€” |
 | Last recorded | **Skipped** (2026-09-12 write run). No new unread notification could be attributed to the run. |
 
 **Safety rule:** existing notifications are **never** changed. Only a notification that this run created and can be traced back to may be marked read.
@@ -59,4 +59,4 @@ Spec: [tests/api/notifications.spec.ts](../../tests/api/notifications.spec.ts) Â
 
 **Cleanup:** teardown deletes A. Notifications cannot be removed, so N may remain as a read notification.
 
-**Not covered:** another user's notification (403) and a missing ID (API-NOT-06/07).
+**Not covered:** another user's notification (403) and a missing ID.

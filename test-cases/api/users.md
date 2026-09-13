@@ -12,8 +12,8 @@ Spec: [tests/api/users.spec.ts](../../tests/api/users.spec.ts) · Project: `api`
 | Project / tag | api / — |
 | Type | Functional, contract, data reconciliation, security |
 | Priority / basis | P1 / C (status and `User` schema), P (field completeness, DB identity, no password hash) |
-| Catalog / finding | API-USR-01, API-SEC-04 (password field only) / — |
-| Last recorded | Pass (2026-09-12) |
+| Finding | — |
+| Last recorded | Pass (2026-09-13) |
 
 **Preconditions**
 - A valid session token from TC-SETUP-001.
@@ -28,4 +28,4 @@ Spec: [tests/api/users.spec.ts](../../tests/api/users.spec.ts) · Project: `api`
 
 **Postconditions:** none. The case only reads.
 
-**Not covered here (planned):** second-user isolation (API-SEC-03), controlled null/string `phone`/`notes` fixtures (API-USR-02), and profile updates (API-USR-04…07, blocked by F-06).
+**Not covered here:** second-user isolation (needs a second controlled account), controlled null/string `phone`/`notes` fixtures, and profile updates (blocked by F-06).

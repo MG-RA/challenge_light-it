@@ -12,8 +12,8 @@ Spec: [tests/api/payments.spec.ts](../../tests/api/payments.spec.ts) · Project:
 | Project / tag | api / — |
 | Type | Functional, data isolation, data reconciliation |
 | Priority / basis | P0 / C (200, `Payment[]`, `amount` as a string, enums), P (completeness, exact owned ID set, numeric amount) |
-| Catalog / finding | API-PAY-01, API-PAY-02 (partial) / F-09 (compare decimals numerically) |
-| Last recorded | Pass (2026-09-12) |
+| Finding | F-09 (compare decimals numerically) |
+| Last recorded | Pass (2026-09-13) |
 
 **Preconditions:** a valid session token. An empty list is valid.
 
@@ -38,13 +38,13 @@ Spec: [tests/api/payments.spec.ts](../../tests/api/payments.spec.ts) · Project:
 | Project / tag | api / **@mutating** |
 | Type | Functional, business rules, state verification |
 | Priority / basis | P0 / C (200 with `success`/`payment_id`), P (one persisted payment, returned ID equals the stored ID), Q (zero, negative and duplicate rejected with 400 or 409) |
-| Catalog / finding | API-PAY-04 (cash), API-PAY-07 (zero/negative), API-PAY-08 (duplicate) / **F-18** |
-| Last recorded | **Fail, F-18** (2026-09-12 write run). The valid step returned HTTP 200, but no payment was persisted for appointment 1137, so step 4 failed. Steps 5–8 did not run: the safety stop blocked the zero, negative and duplicate submissions. The appointment was deleted. |
+| Finding | **F-18** |
+| Last recorded | **Fail, F-18** (2026-09-12 write run). The valid step returned HTTP 200, but no payment was persisted for appointment 1137, so step 4 failed. Steps 5–8 were not reached, so the zero, negative and duplicate submissions were never sent. The appointment was deleted. |
 
 **Preconditions**
 - The shared `@mutating` preconditions (see [appointments.md](appointments.md#shared-mechanics)).
 - The first active doctor has a positive, finite `consultation_fee`.
-- The payment cap allows 4 submissions per run. This case uses all 4.
+- The payment cap allows 4 submissions per worker process. This case uses all 4.
 
 **Test data:** a dedicated fresh appointment. `amount` is the doctor's fee **as a number** (the request schema is a number, while the response amount is a string). `method` is `cash`.
 
@@ -61,4 +61,4 @@ Spec: [tests/api/payments.spec.ts](../../tests/api/payments.spec.ts) · Project:
 
 **Cleanup:** teardown tries to delete A. If linked payments block the deletion, A is **cancelled** instead and recorded as a `residue` annotation. Payments cannot be removed through the API. If cancellation also fails, cleanup fails.
 
-**Not covered:** `card`/`insurance`, an invalid method (400), missing or wrong-type fields, another user's or a missing appointment, and cancelled or completed appointments (API-PAY-04…10).
+**Not covered:** `card`/`insurance`, an invalid method (400), missing or wrong-type fields, another user's or a missing appointment, and cancelled or completed appointments.

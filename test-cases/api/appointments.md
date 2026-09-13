@@ -2,13 +2,13 @@
 
 Spec: [tests/api/appointments.spec.ts](../../tests/api/appointments.spec.ts) · Project: `api` (depends on `setup`)
 
-This file contains 4 read cases (default run) and 11 `@mutating` write cases (state run only).
+This file contains 2 read cases (default run) and 11 `@mutating` write cases (write run only).
 
 ## Shared mechanics
 
 **F-15 compatibility read** (`readAppointments`, [appointmentResponse.ts:11](../../tests/api/appointmentResponse.ts:11)), used by every read step below:
 1. The response has HTTP **200**. A list must be an array. A detail is wrapped as a one-item list.
-2. Only an `appointment_date` of **exactly** `YYYY-MM-DDT00:00:00.000Z` is converted to `YYYY-MM-DD`, and the conversion is recorded as a date-format violation. Other datetime formats, offsets or impossible dates are **not** converted and fail validation.
+2. Only an `appointment_date` of **exactly** `YYYY-MM-DDT00:00:00.000Z` is converted to `YYYY-MM-DD`, and the conversion is returned as a date-format violation. TC-APT-001/002 assert that list with a **soft** assertion, so F-15 stays visible while DB reconciliation still runs. Other datetime formats, offsets or impossible dates are **not** converted and fail validation.
 3. The normalized records must pass `Appointment[]` schema validation **and** the field-completeness policy.
 
 **Selected DB fields** (`db.appointmentsForPatient`): `id, patient_id, doctor_id, appointment_date, time_slot, status`.
@@ -16,10 +16,10 @@ This file contains 4 read cases (default run) and 11 `@mutating` write cases (st
 **Owned write data** (`owned` fixture, [writes.ts](../../tests/api/writes.ts)). This applies to every `@mutating` case:
 - **Guard:** requires `RUN_MUTATING=1`, one worker and zero retries. It also confirms `GET /users/me` returns the same `id` as the DB `testUser`.
 - **`freeSlot()`:** picks the first active doctor and gets their availability, which must be 200 with valid `HH:mm` slots. It then finds a catalog slot in the next 1–30 days with no non-cancelled DB appointment for that doctor. If none is found, the case throws **before any write**.
-- **`create(body)`:** counts toward the booking cap of 20. It sets `notes` to a unique run marker and sends `POST /api/appointments`. It then reads DB rows carrying that marker, even when the request was rejected.
+- **`create(body)`:** counts toward the booking cap of 20 per worker process. It sets `notes` to a unique run marker and sends `POST /api/appointments`. It then reads DB rows carrying that marker, even when the request was rejected.
 - **`book()`:** gets a free slot, rechecks that the slot is still free, and creates the appointment. It asserts HTTP **201**, **exactly one** marked row, row values equal to the payload plus `patient_id` and marker, and a status in `active|pending|completed|cancelled`.
 - **reschedule / cancel / remove:** refuse to act unless the row was created by this run, is owned by the test user, and still carries its marker. Each one captures the `before` row.
-- **Teardown:** deletes every marked row that still exists and confirms it is gone in the DB. A row that survives DELETE without linked payments fails cleanup.
+- **Teardown:** re-queries every attempted marker (including creates whose request or first DB read threw), deletes every marked row that still exists and confirms it is gone in the DB. A row that survives DELETE without linked payments fails cleanup; one blocked by linked payments is cancelled, the stored cancellation is verified, and it is annotated as residue.
 
 **Settled DB assertions** ([dbState.ts](../../tests/api/dbState.ts)) poll the DB for a bounded window until the expectation holds. They then assert, so a value that never settles still fails with a real diff.
 
@@ -33,8 +33,8 @@ This file contains 4 read cases (default run) and 11 `@mutating` write cases (st
 | Project / tag | api / — |
 | Type | Functional, data isolation, data reconciliation |
 | Priority / basis | P0 / C (200, `Appointment[]`), P (exact owned ID set, DB values, completeness) |
-| Catalog / finding | API-APT-01 / F-15 (compatibility path) |
-| Last recorded | Pass (2026-09-12) |
+| Finding | **F-15** (soft date-format assertion) |
+| Last recorded | **Fail, F-15** (2026-09-13): only the soft date-format assertion failed; ID set, ownership and DB values all matched. |
 
 **Preconditions:** a valid session token and a `testUser` DB row. An empty list is valid and still reconciles.
 
@@ -42,9 +42,10 @@ This file contains 4 read cases (default run) and 11 `@mutating` write cases (st
 |---|---|---|
 | 1 | Send `GET /api/appointments` and read it with `readAppointments(…, 'list')`. | HTTP 200. The array passes schema and completeness checks after the F-15 normalization. |
 | 2 | Read the test user's appointments from the DB. | — |
-| 3 | Compare the sorted API IDs with the DB IDs. | The ID sets are **identical**: nothing belonging to another patient and nothing missing. |
-| 4 | For each API item, check ownership. | `patient_id === testUser.id`. |
-| 5 | For each API item, compare with its DB row. | It matches `id, patient_id, doctor_id, appointment_date` (normalized), `time_slot` and `status`. |
+| 3 | **Soft:** assert no date-format violations were recorded. | **Target:** every `appointment_date` is `YYYY-MM-DD`. **Current:** fails with UTC-midnight timestamps (F-15); the case continues. |
+| 4 | Compare the sorted API IDs with the DB IDs. | The ID sets are **identical**: nothing belonging to another patient and nothing missing. |
+| 5 | For each API item, check ownership. | `patient_id === testUser.id`. |
+| 6 | For each API item, compare with its DB row. | It matches `id, patient_id, doctor_id, appointment_date` (normalized), `time_slot` and `status`. |
 
 ---
 
@@ -52,12 +53,12 @@ This file contains 4 read cases (default run) and 11 `@mutating` write cases (st
 
 | Field | Value |
 |---|---|
-| Automated test | [appointments.spec.ts:21](../../tests/api/appointments.spec.ts:21) › `Appointments API › GET /appointments/:id returns an owned appointment matching the DB` |
+| Automated test | [appointments.spec.ts:22](../../tests/api/appointments.spec.ts:22) › `Appointments API › GET /appointments/:id returns an owned appointment matching the DB` |
 | Project / tag | api / — |
 | Type | Functional, data reconciliation |
 | Priority / basis | P0 / C (200), P (`Appointment` shape and completeness, DB values). The detail operation declares no response schema, so the schema check here is suite policy. |
-| Catalog / finding | API-APT-13 / F-15 (compatibility path) |
-| Last recorded | Pass (2026-09-12) |
+| Finding | **F-15** (soft date-format assertion) |
+| Last recorded | **Fail, F-15** (2026-09-13): only the soft date-format assertion failed; the detail matched the DB row. |
 
 **Preconditions:** the test user owns at least one appointment. Otherwise the case is skipped.
 
@@ -65,64 +66,23 @@ This file contains 4 read cases (default run) and 11 `@mutating` write cases (st
 |---|---|---|
 | 1 | Read the first owned appointment row from the DB. | A row is returned. |
 | 2 | Send `GET /api/appointments/{id}` and read it with `readAppointments(…, 'detail')`. | HTTP 200. The object passes schema and completeness checks after normalization. |
-| 3 | Compare with the DB row. | All selected DB fields match. |
-| 4 | Check ownership. | `patient_id === testUser.id`. |
+| 3 | **Soft:** assert no date-format violations were recorded. | **Target:** `YYYY-MM-DD`. **Current:** fails with a UTC-midnight timestamp (F-15); the case continues. |
+| 4 | Compare with the DB row. | All selected DB fields match. |
+| 5 | Check ownership. | `patient_id === testUser.id`. |
 
 ---
 
-## TC-APT-003: Appointment list uses the OpenAPI date-only format
-
-| Field | Value |
-|---|---|
-| Automated test | [appointments.spec.ts:31](../../tests/api/appointments.spec.ts:31) › `Appointments API › appointment list uses the OpenAPI date-only format` |
-| Project / tag | api / — |
-| Type | Contract, known defect |
-| Priority / basis | P1 / C (`appointment_date` is `format: date`) |
-| Catalog / finding | API-APT-02 / **F-15** |
-| Last recorded | Expected failure, F-15 (2026-09-12). Every list item was serialized as a UTC-midnight timestamp. |
-
-**Preconditions:** the test user owns at least one appointment. Otherwise the case is skipped.
-
-| # | Action | Expected result |
-|---|---|---|
-| 1 | Read the first owned appointment from the DB. This confirms there is data to assess. | A row is returned. |
-| 2 | Send `GET /api/appointments` and read it with `readAppointments(…, 'list')`. | Pre-check: HTTP 200, schema and completeness pass. Only the exact midnight format is tolerated. |
-| 3 | Pre-check the list content. | At least one appointment, and every `patient_id === testUser.id`. |
-| 4 | *(after `test.fail`)* Assert the recorded date-format violations are empty. | **Target:** every raw `appointment_date` is `YYYY-MM-DD`. **Current:** expected failure (F-15). |
-
----
-
-## TC-APT-004: Appointment detail uses the OpenAPI date-only format
-
-| Field | Value |
-|---|---|
-| Automated test | [appointments.spec.ts:31](../../tests/api/appointments.spec.ts:31) › `Appointments API › appointment detail uses the OpenAPI date-only format` |
-| Project / tag | api / — |
-| Type | Contract, known defect |
-| Priority / basis | P1 / C for the `Appointment` model. The detail route itself declares no schema. |
-| Catalog / finding | API-APT-02, API-APT-13 / **F-15** |
-| Last recorded | Expected failure, F-15 (2026-09-12) |
-
-**Preconditions:** the test user owns at least one appointment. Otherwise the case is skipped.
-
-| # | Action | Expected result |
-|---|---|---|
-| 1 | Read the first owned appointment ID from the DB. | A row is returned. |
-| 2 | Send `GET /api/appointments/{id}` and read it with `readAppointments(…, 'detail')`. | Pre-check: HTTP 200, schema and completeness pass. |
-| 3 | Pre-check ownership. | One record with `patient_id === testUser.id`. |
-| 4 | *(after `test.fail`)* Assert the date-format violations are empty. | **Target:** the raw `appointment_date` is `YYYY-MM-DD`. **Current:** expected failure (F-15). |
-
----
+TC-APT-003 and TC-APT-004 are retired: date-only validation is now a soft contract assertion in TC-APT-001 and TC-APT-002. F-15 therefore fails those cases while DB reconciliation continues; no expected-failure marker hides other errors. IDs are not reused.
 
 ## TC-APT-005: `POST /api/appointments` stores exactly one owned appointment, and detail agrees
 
 | Field | Value |
 |---|---|
-| Automated test | [appointments.spec.ts:49](../../tests/api/appointments.spec.ts:49) › `Appointments API writes › POST /appointments stores exactly one owned appointment and detail agrees` |
+| Automated test | [appointments.spec.ts:36](../../tests/api/appointments.spec.ts:36) › `Appointments API writes › POST /appointments stores exactly one owned appointment and detail agrees` |
 | Project / tag | api / **@mutating** |
 | Type | Functional, state verification |
 | Priority / basis | P0 / C (201), P (one persisted row, detail matches the DB). The create response has no schema, so the case does not rely on a returned ID. |
-| Catalog / finding | API-APT-04 / — |
+| Finding | — |
 | Last recorded | Pass (2026-09-12 write run): the appointment was created, verified and deleted. |
 
 **Preconditions:** the shared `@mutating` preconditions and a free catalog slot within 30 days.
@@ -144,11 +104,11 @@ This file contains 4 read cases (default run) and 11 `@mutating` write cases (st
 
 | Field | Value |
 |---|---|
-| Automated test | [appointments.spec.ts:59](../../tests/api/appointments.spec.ts:59) › `Appointments API writes › PUT /appointments/:id/reschedule stores the new slot and preserves identity` |
+| Automated test | [appointments.spec.ts:46](../../tests/api/appointments.spec.ts:46) › `Appointments API writes › PUT /appointments/:id/reschedule stores the new slot and preserves identity` |
 | Project / tag | api / **@mutating** |
 | Type | Functional, state verification |
 | Priority / basis | P0 / C (200), P (persisted new values, unchanged identity) |
-| Catalog / finding | API-APT-19 / — |
+| Finding | — |
 | Last recorded | Pass (2026-09-12 write run). |
 
 **Preconditions:** the shared `@mutating` preconditions. The same doctor has at least two free catalog slots within 30 days.
@@ -161,7 +121,7 @@ This file contains 4 read cases (default run) and 11 `@mutating` write cases (st
 | 4 | Settle and assert the stored row. | `appointment_date` and `time_slot` are the new values. `id`, `patient_id`, `doctor_id` and `notes` (the marker) are unchanged. |
 
 **Cleanup:** teardown deletes A.
-**Not asserted:** the response body shape (`success`, `appointment`). This is planned under API-APT-19.
+**Not asserted:** the response body shape (`success`, `appointment`). Not yet automated.
 
 ---
 
@@ -169,11 +129,11 @@ This file contains 4 read cases (default run) and 11 `@mutating` write cases (st
 
 | Field | Value |
 |---|---|
-| Automated test | [appointments.spec.ts:71](../../tests/api/appointments.spec.ts:71) › `Appointments API writes › PUT /appointments/:id/cancel stores the cancellation without touching a control` |
+| Automated test | [appointments.spec.ts:58](../../tests/api/appointments.spec.ts:58) › `Appointments API writes › PUT /appointments/:id/cancel stores the cancellation without touching a control` |
 | Project / tag | api / **@mutating** |
 | Type | Functional, state verification, isolation |
 | Priority / basis | P0 / C (200), P (persisted `cancelled`, control row unchanged) |
-| Catalog / finding | API-APT-16 / **F-16** |
+| Finding | **F-16** |
 | Last recorded | **Fail, F-16** (2026-09-12 write run). HTTP 200, but appointment 1126 stayed `active`. The control assertion was not reached. Both rows were deleted. |
 
 **Preconditions:** the shared `@mutating` preconditions and two free slots.
@@ -194,11 +154,11 @@ This file contains 4 read cases (default run) and 11 `@mutating` write cases (st
 
 | Field | Value |
 |---|---|
-| Automated test | [appointments.spec.ts:80](../../tests/api/appointments.spec.ts:80) › `Appointments API writes › DELETE /appointments/:id removes the row and detail returns 404` |
+| Automated test | [appointments.spec.ts:67](../../tests/api/appointments.spec.ts:67) › `Appointments API writes › DELETE /appointments/:id removes the row and detail returns 404` |
 | Project / tag | api / **@mutating** |
 | Type | Functional, state verification |
 | Priority / basis | P0 / C (200), P (row absent, detail 404) |
-| Catalog / finding | API-APT-25 / — |
+| Finding | — |
 | Last recorded | Pass (2026-09-12 write run). |
 
 | # | Action | Expected result |
@@ -214,7 +174,7 @@ This file contains 4 read cases (default run) and 11 `@mutating` write cases (st
 
 ## TC-APT-009 … TC-APT-013: `POST /api/appointments` rejects invalid input without storing a row
 
-These cases are generated by the loop at [appointments.spec.ts:88](../../tests/api/appointments.spec.ts:88). They share these steps:
+These cases are generated by the loop at [appointments.spec.ts:75](../../tests/api/appointments.spec.ts:75). They share these steps:
 
 | # | Action | Expected result |
 |---|---|---|
@@ -225,13 +185,13 @@ These cases are generated by the loop at [appointments.spec.ts:88](../../tests/a
 
 **Cleanup:** teardown deletes any marked row that was wrongly created.
 
-| Case | Playwright title (after `Appointments API writes › `) | Mutation | Expected status | Basis | Catalog | Finding / last recorded (2026-09-12) |
-|---|---|---|---|---|---|---|
-| **TC-APT-009** | `POST /appointments rejects missing doctor without storing a row` | Remove `doctor_id`. | `400` | C | API-APT-05 | — / **Pass**: HTTP 400, no row |
-| **TC-APT-010** | `POST /appointments rejects yesterday without storing a row` | `appointment_date = today − 1 day` (UTC). | `400` or `409` (soft) | Q (the date is schema-valid) | API-APT-07 | **F-12** / **Fail**: HTTP 201, row 1129 persisted |
-| **TC-APT-011** | `POST /appointments rejects year 0123 without storing a row` | `appointment_date = '0123-11-23'`. | `400` or `409` (soft) | Q | API-APT-07 | **F-12** / **Fail**: HTTP 201, row 1130 persisted |
-| **TC-APT-012** | `POST /appointments rejects invalid clock without storing a row` | `time_slot = '25:99'`. | `400` or `409` (soft) | Q (`time_slot` is an unconstrained string) | API-APT-08 | **F-02** / **Fail**: HTTP 201, row 1131 persisted |
-| **TC-APT-013** | `POST /appointments rejects inactive doctor without storing a row` | `doctor_id = db.inactiveDoctor().id`. **Skipped** if no inactive doctor exists. | `400` or `409` (soft) | Q | API-APT-09 | **F-04** / **Fail**: HTTP 201, row 1132 persisted |
+| Case | Playwright title (after `Appointments API writes › `) | Mutation | Expected status | Basis | Finding / last recorded (2026-09-12) |
+|---|---|---|---|---|---|
+| **TC-APT-009** | `POST /appointments rejects missing doctor without storing a row` | Remove `doctor_id`. | `400` | C | — / **Pass**: HTTP 400, no row |
+| **TC-APT-010** | `POST /appointments rejects yesterday without storing a row` | `appointment_date = today − 1 day` (UTC). | `400` or `409` (soft) | Q (the date is schema-valid) | **F-12** / **Fail**: HTTP 201, row 1129 persisted |
+| **TC-APT-011** | `POST /appointments rejects year 0123 without storing a row` | `appointment_date = '0123-11-23'`. | `400` or `409` (soft) | Q | **F-12** / **Fail**: HTTP 201, row 1130 persisted |
+| **TC-APT-012** | `POST /appointments rejects invalid clock without storing a row` | `time_slot = '25:99'`. | `400` or `409` (soft) | Q (`time_slot` is an unconstrained string) | **F-02** / **Fail**: HTTP 201, row 1131 persisted |
+| **TC-APT-013** | `POST /appointments rejects inactive doctor without storing a row` | `doctor_id = db.inactiveDoctor().id`. **Skipped** if no inactive doctor exists. | `400` or `409` (soft) | Q | **F-04** / **Fail**: HTTP 201, row 1132 persisted |
 
 Each case is an ordinary failure while its finding is open. No `test.fail` is used. The hard "nothing stored" assertion is what fails.
 
@@ -241,11 +201,11 @@ Each case is an ordinary failure while its finding is open. No `test.fail` is us
 
 | Field | Value |
 |---|---|
-| Automated test | [appointments.spec.ts:109](../../tests/api/appointments.spec.ts:109) › `Appointments API writes › POST /appointments rejects a duplicate slot and leaves exactly one booking` |
+| Automated test | [appointments.spec.ts:96](../../tests/api/appointments.spec.ts:96) › `Appointments API writes › POST /appointments rejects a duplicate slot and leaves exactly one booking` |
 | Project / tag | api / **@mutating** |
 | Type | Business rule, data integrity |
 | Priority / basis | P0 / P (no second row, original unchanged), Q (400 or 409) |
-| Catalog / finding | API-APT-10 / **F-03** |
+| Finding | **F-03** |
 | Last recorded | **Fail, F-03** (2026-09-12 write run): the second create returned 201 and row 1134 was persisted for the same doctor, date and slot as the first booking. Both were deleted. |
 
 | # | Action | Expected result |
@@ -256,7 +216,7 @@ Each case is an ordinary failure while its finding is open. No `test.fail` is us
 | 4 | Settle B1's row. | B1 is unchanged field for field. |
 
 **Cleanup:** teardown deletes B1 and any duplicate.
-**Not covered:** concurrent duplicate submissions (API-APT-11).
+**Not covered:** concurrent duplicate submissions.
 
 ---
 
@@ -264,11 +224,11 @@ Each case is an ordinary failure while its finding is open. No `test.fail` is us
 
 | Field | Value |
 |---|---|
-| Automated test | [appointments.spec.ts:117](../../tests/api/appointments.spec.ts:117) › `Appointments API writes › PUT /appointments/:id/reschedule rejects an invalid body and stores no change` |
+| Automated test | [appointments.spec.ts:104](../../tests/api/appointments.spec.ts:104) › `Appointments API writes › PUT /appointments/:id/reschedule rejects an invalid body and stores no change` |
 | Project / tag | api / **@mutating** |
 | Type | Business rule, state verification |
 | Priority / basis | P1 / P (no partial update), Q (400 or 409) |
-| Catalog / finding | API-APT-22 / **F-17** |
+| Finding | **F-17** |
 | Last recorded | **Fail, F-17** (2026-09-12 write run). HTTP 200, and 1135 changed from 2026-09-18 / 09:00 to 2026-09-11 / 25:99. The row was deleted. |
 
 | # | Action | Expected result |
@@ -278,4 +238,4 @@ Each case is an ordinary failure while its finding is open. No `test.fail` is us
 | 3 | Settle A's row. | **Hard:** A equals `before` field for field. |
 
 **Cleanup:** teardown deletes A.
-**Note:** the invalid date and the invalid clock are combined in one request, so a failure does not show which one the API accepted. The catalog plans separate variants.
+**Note:** the invalid date and the invalid clock are combined in one request, so a failure does not show which one the API accepted. Separate date and clock variants are still needed.

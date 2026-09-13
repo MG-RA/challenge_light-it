@@ -1,209 +1,323 @@
-# Findings — MedAppoint
+# Findings — prioritized bug list
 
-Updated 2026-09-13. Severity reflects potential impact; **evidence status** describes what was actually demonstrated. Current results come from the 2026-09-13 [default run](runs/2026-09-13-default.md) and 2026-09-12 [write run](runs/2026-09-12-writes.md); the 2026-09-11 [execution record](EXECUTION.md) is historical. Historical observations below were already recorded before this cycle; their original observation timestamps were not captured and they were not all reproduced again.
+Updated 2026-09-13. Evidence comes from the API write run on 2026-09-12 and the API read, UI, DB and rate-limit runs on 2026-09-13. Each finding links the test cases that reproduce it; their latest results are in the [test-case matrix](../test-cases/README.md#traceability-matrix).
 
-The read-only cycle was followed by an isolated [state execution](STATE_EXECUTION.md). It created 14 owned appointments and removed all of them. One payment submission returned an ID without persistence and stopped further live scenarios. No profile or notification writes occurred; no residue was observed in the final independent check.
+The numbered list is the recommended triage order, highest priority first. **P1**: address first because a core operation loses or corrupts state. **P2**: schedule next for incorrect UI behavior, eligibility, contracts or a bounded security concern. **P3**: lower-impact response consistency or feedback. Priority is proposed fix order; severity is potential impact. No P0 blocker has been established. Existing finding IDs stay unchanged regardless of rank.
 
-| ID | Severity | Area | Summary | Evidence status |
-|---|---|---|---|---|
-| F-01 | Medium | API completeness | Doctor list omits fee and active fields returned by detail | Reproduced 2026-09-11 and 2026-09-12; additional suite policy |
-| F-02 | High | Data integrity | Create accepts invalid clock value `25:99` | Controlled API/DB reproduction 2026-09-11, repeated 2026-09-12 |
-| F-03 | High | Booking data | Sequential creation accepts a duplicate doctor/date/slot | Controlled API/DB reproduction 2026-09-11, repeated 2026-09-12; concurrency deferred |
-| F-04 | Medium | Booking data | Create accepts a currently inactive doctor | Controlled API/DB reproduction 2026-09-11, repeated 2026-09-12 |
-| F-05 | Info | Availability | Slot list's date-specific meaning is unclear | Clarification needed; no root cause established |
-| F-06 | High | Profile | Recorded profile save merged last name and notes into first name | Historical manual reproduction + DB corroboration; not rerun |
-| F-07 | Info | Data plausibility | Notification timestamp was future-dated | Historical observation; fixture intent unknown |
-| F-08 | Info | UI terminology | “Confirmed” differs from API enum vocabulary | Mapping clarification, not a proven defect |
-| F-09 | Info | Serialization | Equivalent numeric strings use different decimal formatting | Consistency observation; numeric comparisons now pass |
-| F-10 | Info | Serialization | Notification API uses `isRead`; DB uses `is_read` | Documented mapping; current reconciliation passes |
-| F-11 | Info | Validation | Nonnumeric doctor identifier returned 404 | Historical observation; no agreed 400 requirement |
-| F-12 | High | Booking | Create accepts yesterday and year 0123 | Controlled API/DB reproduction 2026-09-11, repeated 2026-09-12 |
-| F-13 | Medium | Performance | Dashboard PNG body is 6.14 MiB | Reproduced 2026-09-11 and 2026-09-12 |
-| F-14 | Low | HTTP/privacy | Profile and appointment responses use public cache directives | Reproduced 2026-09-11 and 2026-09-12; no cross-user disclosure demonstrated |
-| F-15 | Medium | Contract | Appointment date is serialized as timestamp, contrary to `format: date` | Reproduced 2026-09-11 and 2026-09-12 on list and detail |
-| F-16 | High | Cancellation | HTTP 200 leaves owned appointment active | Controlled API/DB reproduction 2026-09-11, repeated 2026-09-12 |
-| F-17 | High | Rescheduling | Invalid date/time accepted and persisted | Controlled API/DB reproduction 2026-09-11, repeated 2026-09-12 |
-| F-18 | High | Payments | HTTP 200 returns payment ID with no persisted row | Controlled API/DB reproduction 2026-09-11, repeated 2026-09-12; safety stop |
-| F-19 | Info | Booking UI | Reported availability does not load | Not reproduced: selected-doctor GET and displayed slots passed |
-| F-20 | Low | Auth/contract | Empty-signature token on `GET /users/me` gets edge-firewall `403 text/plain`, not documented 401 | Reproduced 2026-09-12; access denied, no disclosure |
+Evidence status is explicit: a historical report or unconfirmed policy is not presented as a freshly reproduced defect. All live owned records created during the cited runs were cleaned up; payment follow-on probes stopped when valid payment persistence failed.
 
-## Reproduced in this cycle
+## Bugs and issues requiring action
 
-### F-01 — Doctor list omits useful fields
+1. **F-18 — Payment reports success without storing a payment**
 
-- **Reproduction:** authenticate, call `GET /api/doctors`, compare item keys with `GET /api/doctors/{id}`.
-- **Observed:** six list records contain `id, first_name, last_name, specialty, bio, avatar_url`; `is_active` and `consultation_fee` are absent. Detail returns these fields.
-- **Oracle distinction:** these properties are declared in the snapshot but **not required**. The response passes literal OpenAPI validation. It fails the suite's separately named field-completeness policy.
-- **Impact:** clients need detail requests to obtain fees; list/detail completeness is inconsistent. The list's active-only filtering itself matched the DB.
-- **Suggestion:** agree which fields list consumers need; add them to the list and/or publish a separate list-item schema with explicit required properties.
-- **Automation:** [doctors tests](../tests/api/doctors.spec.ts), one guarded completeness expectation. Wrong types, non-200 responses, and unrelated missing fields fail before the expected-failure marker.
+   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 API/DB write run.
 
-### F-13 — Oversized dashboard banner
+   **Description / actual result:** HTTP 200 reports a payment ID, but no payment row appears for appointment 1137 during bounded reconciliation.
 
-- **Reproduction:** open the authenticated dashboard; inspect the loaded image response.
-- **Current evidence:** `/images/dashboard.png` is **6,442,770 bytes**, exceeding the suite's proposed **512,000-byte** per-image budget.
-- **Historical layout evidence:** 2764×1236 source displayed at approximately 974×160 in a 1280×720 viewport; no alt attribute was observed. These dimensions/alt details were not independently remeasured this cycle.
-- **Impact:** unnecessary transfer cost. Approximately 5.2 seconds at 10 Mbps is an idealized transfer-time estimate, **not a measured page-load result**.
-- **Suggestion:** agree a performance budget, resize for rendered use, consider WebP/AVIF, and use appropriate asset caching. Give decorative imagery an empty alt attribute.
-- **Automation:** [dashboard tests](../tests/ui/dashboard.spec.ts). Image load/response checks and other image budgets must pass before only the banner budget assertion is marked expected.
+   **How to reproduce:** Create an owned unpaid appointment; submit a cash payment using the stored doctor fee; query linked payments.
 
-### F-14 — Per-user API responses marked public
+   **Expected result:** A successful payment response identifies a persisted payment linked to the correct appointment.
 
-- **Reproduction:** authenticate, then read `GET /api/users/me` and `GET /api/appointments`.
-- **Current evidence:** both responses return `Cache-Control: public, max-age=0, must-revalidate`.
-- **Historical observation:** weak ETag, `Vary: Origin`, conditional request returning 304, and `x-vercel-cache: BYPASS`. Those conditional/CDN details were not rechecked this cycle.
-- **Impact:** public cache directives are inappropriate for per-user data without carefully verified shared-cache behavior. This finding demonstrates headers, **not an actual cross-user cache leak**. A 304 alone is normal revalidation behavior.
-- **Suggestion:** use a private/no-store policy for sensitive patient responses and verify any relevant intermediaries.
-- **Automation:** [caching tests](../tests/api/caching.spec.ts), separate cases for each endpoint. Successful status and body validation precede the marker; a different unsafe header is unexpected. Appointment body validation uses the explicit F-15 compatibility path.
+   **Impact:** The user can believe payment was recorded when payment history and the DB contain no record. No external charge or provider failure was demonstrated.
 
-### F-15 — Appointment date violates the date-only contract
+   **Recommended action / limits:** Verify persistence before returning success; then retest valid, zero, negative and duplicate payments. Later probes were stopped after the valid-payment failure.
 
-- **Found:** new automated read coverage on 2026-09-11.
-- **Reproduction:** authenticate; read `GET /api/appointments`, then `GET /api/appointments/{owned-id}` using an ID discovered from the tester's records.
-- **Expected:** `Appointment.appointment_date` has OpenAPI `type: string, format: date`, for example `2026-09-12`.
-- **Actual:** list entries use values such as `2026-09-12T00:00:00.000Z`; owned detail uses the same timestamp representation. All eight list items in the observed account had the mismatch. Responses were 200.
-- **Stored value:** Postgres column type is `date`. After extracting the calendar date from the exact observed midnight representation, list and detail values matched owned DB records.
-- **Impact:** strict date consumers reject the response; consumers that interpret it as a local timestamp may show a different calendar day. No actual UI date shift was established in this cycle.
-- **Suggestion:** serialize the stored calendar date as `YYYY-MM-DD`. If timestamps are intentional, revise the contract and confirm consumer timezone semantics instead.
-- **Automation:** [appointment tests](../tests/api/appointments.spec.ts) contain separate list/detail contract expectations. [The compatibility helper](../tests/api/appointmentResponse.ts) permits only exact UTC-midnight timestamps for independent DB/header tests, validates calendar dates and all other fields, and leaves the published schema unchanged. The removed local guard tests, which rejected non-midnight timestamps, offsets, impossible dates, and unrelated type errors, are not part of the two-surface suite.
-- **Classification:** both new contract cases first validate status, shape, required data, and ownership, then mark only the known date-format assertion as expected. This does not hide arbitrary appointment failures.
+   **Evidence / coverage:** [Payment cases](../test-cases/api/payments.md).
 
-## Historical findings and clarification requests
+2. **F-16 — Cancellation reports success but leaves the appointment active**
 
-### F-02 — Invalid time persisted
+   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 API/DB write run.
 
-Previous query `select distinct time_slot from appointments` included `25:99` (one row). This is evidence of an invalid stored clock value, not proof that today's create endpoint accepts it. The previously observed valid catalog ran from 09:00 to 15:30.
+   **Description / actual result:** HTTP 200; appointment 1126 remains active. The control comparison was not reached.
 
-**Current write evidence:** POST returned 201 and appointment 1110 persisted `25:99`. The owned, marked row was deleted. Rejection is a proposed business expectation (400 or 409), independent of the historical stored-data observation. See [state evidence](STATE_EXECUTION.md).
+   **How to reproduce:** Create an owned appointment and a control; send PUT /api/appointments/{id}/cancel; poll the target row.
 
-### F-03 — Duplicate booking records
+   **Expected result:** Successful cancellation persists cancelled status for the target and leaves the control unchanged.
 
-Previous grouping of non-cancelled appointments by doctor/date/time found duplicate groups, including **doctor 1, 2026-11-04 09:30, eight active records**. The tester's seeded appointment 1072 was noted “Double booked appointment.”
+   **Impact:** Users may believe a booking is cancelled while it remains active; cancellation-dependent views cannot reflect a change that was never stored.
 
-**Interpretation:** stored duplicates are a data-integrity observation. Seeded data or earlier behavior may explain them; they do not alone prove current concurrent or sequential create behavior.
+   **Recommended action / limits:** Persist cancellation before reporting success and verify the full target/control flow.
 
-**Current write evidence:** two sequential requests created appointments 1112 and 1113 for doctor 1 / 2026-09-21 / 09:00. The second returned 201; both rows persisted and were deleted. Duplicate rejection is a proposed business expectation. Concurrent requests remain deferred; availability presentation alone cannot guarantee write integrity.
+   **Evidence / coverage:** [TC-APT-007](../test-cases/api/appointments.md).
 
-### F-04 — Appointments with an inactive doctor
+3. **F-03 — The same doctor, date and time can be booked twice**
 
-Previous data showed doctor 7 (`is_active = false`) referenced by active appointment IDs 1, 9, and 198.
+   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 sequential API/DB write run.
 
-**Interpretation:** the doctor may have been deactivated after booking. Booking-time validation failure and handling of later deactivation are different questions.
+   **Description / actual result:** Second create returns 201 and persists another row (1134).
 
-**Current write evidence:** doctor 7 was selected from `not is_active`; POST returned 201 and appointment 1111 persisted against that doctor. The row was deleted. Rejection is a proposed business expectation; handling later deactivation remains a separate clarification.
+   **How to reproduce:** Create an owned booking in a free slot; submit another booking for the same doctor/date/time with a separate marker.
 
-### F-05 — Availability semantics unclear
+   **Expected result:** Reject the conflicting request without creating a second active booking; preserve the first row. Exact rejection status needs agreement.
 
-Previous `GET /doctors/1/availability` returned a full slot list despite stored bookings. The snapshot exposes **no date parameter**, so it may be a reusable slot catalog rather than vacancy for a specific day.
+   **Impact:** Two patients or bookings can occupy the same appointment slot, creating a scheduling conflict.
 
-**Clarification:** define date and timezone semantics and which layer resolves occupied slots. Do not call this the root cause of F-03 without application implementation or controlled write evidence. Current automation verifies shape, clock strings, and uniqueness only.
+   **Recommended action / limits:** Enforce the agreed uniqueness rule atomically; then test concurrent requests. Sequential duplication is proven; concurrency has not been tested.
 
-### F-06 — Profile save corrupts names
+   **Evidence / coverage:** [TC-APT-014](../test-cases/api/appointments.md).
 
-The earlier manual profile-form test was corroborated with an API call and stored data:
+4. **F-17 — Rescheduling accepts and stores an invalid date and time**
 
-```bash
-curl -X PUT "$API/api/users/me" \
-  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"first_name":"Proud","last_name":"Phoenix","notes":"test"}'
-# Recorded response: 200, first_name "Proud Phoenix test", last_name "", notes "test".
-```
+   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 API/DB write run.
 
-These names were the tester's assigned alias, **not reusable values for another candidate**. Saving the resulting empty last name again was recorded as `400 {"error":"last_name is required"}`.
+   **Description / actual result:** HTTP 200; appointment 1135 changes from 2026-09-18 / 09:00 to 2026-09-11 / 25:99.
 
-Previous DB inspection found two users with empty last names whose notes were appended to first names, including the tester's account. This supports the recorded reproduction; it does not establish that every possible profile save behaves identically.
+   **How to reproduce:** Create an owned appointment; reschedule it to yesterday with time_slot 25:99; compare the full DB row.
 
-**Impact:** the recorded save corrupted display names, exposed notes in name fields, and made a subsequent save fail validation. API-vs-DB reads alone can agree on this corrupt state.
+   **Expected result:** Reject invalid values and preserve the entire original row.
 
-**Automation status:** the unsafe live round-trip and guessed-name fixture were removed, and no profile write case exists. Another save can corrupt restoration too; automation stays disabled until a disposable account or reliable reset exists. See [write testing](WRITE_TESTING.md).
+   **Impact:** An existing valid appointment becomes an unusable or misleading schedule entry.
 
-**Specification clarification:** `PUT /users/me` explicitly documents 403 when first/last names differ from the candidate's assigned alias. That 403 is not itself a bug or an unanswered requirement.
+   **Recommended action / limits:** Apply agreed booking validation to rescheduling. Separate date and time probes are still needed because this request combined both.
 
-### F-07 — Future notification timestamp
+   **Evidence / coverage:** [TC-APT-015](../test-cases/api/appointments.md).
 
-Previous DB inspection found `created_at = 2027-03-15`, in the future relative to that observation. The original observation timestamp and fixture intent were not recorded.
+5. **F-12 — Booking accepts past dates; the UI also lacks past-date validation**
 
-**Status:** data-plausibility observation. Confirm whether future dates are deliberately seeded; do not infer a clock bug from a single fixture value.
+   **Priority:** P1 · **Severity:** High · **Status:** API/DB reproduced 2026-09-12; UI reproduced 2026-09-13.
 
-### F-08 — UI status vocabulary
+   **Description / actual result:** API returns 201 and stores both invalid booking dates (1129, 1130). UI date has no minimum; submitting the past date does not return focus to Date.
 
-The dashboard previously rendered “Confirmed”; API enum values are `active | pending | completed | cancelled`.
+   **How to reproduce:** Submit owned bookings for yesterday and 0123-11-23; separately fill the UI date with 2000-01-01 and submit with POST intercepted.
 
-**Status:** terminology/mapping clarification. A human-readable label for `active` can be intentional. Establish the mapping before classifying a defect.
+   **Expected result:** Reject past booking dates under the proposed business rule; provide clear UI validation and enforce it server-side.
 
-### F-09 / F-10 — Decimal formatting and field naming
+   **Impact:** Users can create appointments that cannot represent a future visit.
 
-Historical observations: payment `amount` was `"60"` versus DB `60.00`; fee formatting also differed. Current doctor detail returned `"120"` for a stored `120.00`, and numeric reconciliation passed. The supplied schemas intentionally model monetary values as strings.
+   **Recommended action / limits:** Add aligned client/server date validation with an agreed timezone. The UI reproduction made no invalid server write.
 
-Notifications expose the documented field `isRead`; the DB uses `is_read`. Current explicit mapping and ownership reconciliation passed.
+   **Evidence / coverage:** [TC-APT-010/011](../test-cases/api/appointments.md); [TC-UI-BOOK-007](../test-cases/ui/booking.md).
 
-**Status:** design consistency observations, not demonstrated contract violations. Historical SPA submission of `doctor_id: "1"` rather than integer 1 is a separate request-coercion observation, not retested here.
+6. **F-02 — Booking stores an impossible clock value**
 
-### F-11 — Nonnumeric doctor ID returns 404
+   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 API/DB write run.
 
-Previously recorded: `GET /doctors/abc` returned 404. No agreed requirement establishes that 400 is mandatory. Current automation tests an unused numeric ID; the nonnumeric case was not rerun.
+   **Description / actual result:** HTTP 201; appointment 1131 stores 25:99.
 
-### F-12 — Past booking date accepted
+   **How to reproduce:** Create a marked appointment with otherwise valid values and time_slot 25:99; read its DB row.
 
-Earlier manual exploration recorded a successful booking with `appointment_date: "2025-12-11"`. Previous DB queries found five active appointments dated before their creation day, including ID 1087 dated `0123-11-23`.
+   **Expected result:** Reject impossible time values without storing a booking. The schema currently leaves time_slot unconstrained.
 
-**Interpretation:** preserve the recorded manual success as historical write-path evidence. Registration/creation timestamps alone do not establish whether other rows were seeded or user-created.
+   **Impact:** Invalid appointment times undermine scheduling and downstream displays.
 
-**Current write evidence:** HTTP 201 created appointment 1108 dated `2026-09-10` (yesterday at execution), and 1109 dated `0123-11-23`. Both persisted and were deleted. The two legacy drafts were replaced by the [`@mutating` appointment cases](../tests/api/appointments.spec.ts). Past-date rejection is a proposed business expectation, not an invented precise status requirement.
+   **Recommended action / limits:** Validate real clock values and membership in the agreed doctor/date availability.
 
-## New state and UI investigations
+   **Evidence / coverage:** [TC-APT-012](../test-cases/api/appointments.md).
 
-### F-16 — Cancellation reports success without persisting cancellation
+7. **F-06 — Profile save merges surname and notes into the first name**
 
-Owned appointment 1105 was `active` before PUT cancel. The endpoint returned 200, but bounded DB polling never observed `cancelled`; it remained `active`. The unrelated owned control assertion was not reached after this failure. Both 1105 and control 1106 were deleted successfully. Verify the write is committed before returning success; add this scenario to application regression coverage. No backend root cause is established.
+   **Priority:** P1 · **Severity:** High · **Status:** Historical manual reproduction with DB corroboration; not rerun.
 
-### F-17 — Invalid reschedule changes persisted state
+   **Description / actual result:** Recorded HTTP 200 changed first_name to Proud Phoenix test, emptied last_name and retained notes=test. A later save failed because last_name was required.
 
-Owned appointment 1114 began at `2026-09-28 / 09:00`. Rescheduling to `2026-09-10 / 25:99` returned 200 and persisted both invalid values. The row was deleted. The proposed business expectation is rejection (400 or 409) with the full row unchanged. Validate rescheduling with the same agreed date/time rules as creation.
+   **How to reproduce:** The recorded save submitted the tester’s assigned first name, last name and notes as separate fields. Do not reuse that alias for another account.
 
-### F-18 — Payment reports an ID without persistence
+   **Expected result:** Preserve the assigned name fields and store notes independently.
 
-Appointment 1115 had no linked payments before submission. A cash payment using the doctor's stored fee (120) returned HTTP 200 and ID `999`, while bounded DB reconciliation found no new linked payment. This triggered the safety stop; zero/negative/duplicate probes were not sent. Appointment 1115 was deleted. A subsequent independent DB check also found no payment ID 999 or linked payment. Verify successful payment responses identify a committed record; no provider, transaction, or mock implementation root cause is established.
+   **Impact:** Corrupts profile names, can expose notes in greetings, and can prevent subsequent saves.
 
-### F-19 — Reported booking availability load issue not reproduced
+   **Recommended action / limits:** Reverify with a disposable account or reliable reset before changing another profile. The documented alias-mismatch 403 is intentional.
 
-The user reported that booking did not load availability from the endpoint. Read-only browser inspection and a new [UI regression](../tests/ui/booking.spec.ts) observed GET `/api/doctors/{id}/availability` returning 200 after doctor selection. Selecting two active doctors populated time options matching each response's `time_slots`. The inspected doctor returned ten slots. API writes were blocked during exploration; no booking was submitted.
+   **Evidence / coverage:** Historical manual reproduction only. No automated case exists: profile writes stay disabled until a disposable account or reliable reset is available (see the [QA plan](../QA_PLAN.md#2-scope)).
 
-This does not reproduce the reported symptom on the checked path. It does not establish date-specific vacancy, recovery from failed requests, slow-network behavior, or every doctor/date combination. Keep F-05's catalog-versus-vacancy clarification separate. Next targeted checks are failed-response feedback and doctor switching with distinguishable controlled responses.
+8. **F-05 — An occupied appointment slot remains selectable**
 
-### F-20 — Empty-signature token gets an undocumented edge 403
+   **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-13 owned-booking UI/DB check.
 
-- **Found:** new read-only authorization coverage on 2026-09-12.
-- **Reproduction:** take a valid session token, set its header to `{"alg":"none","typ":"JWT"}`, drop the signature (`header.payload.`), and call `GET /api/users/me`.
-- **Expected:** `401`, the only documented refusal for this operation.
-- **Actual:** `403`, `Content-Type: text/plain`, body `Forbidden` plus a request id, and `x-vercel-mitigated: deny`. The Vercel firewall answers before the API. Any empty signature triggers it, including an unchanged `HS256` header.
-- **Control:** the same `alg: none` header with the original signature kept reaches the API and gets `401 {"error":"Unauthorized"}`, as does a token whose `user_id` was changed to another patient. Access is denied in every variant; no profile data was returned.
-- **Impact:** clients that treat 401 as "session invalid, log in again" and parse JSON errors get a plain-text 403 instead. This is a contract and client-handling deviation, not a security bypass. The edge rule also hides whether the API itself rejects empty-signature tokens.
-- **Suggestion:** document 403 as a possible edge response, or have the firewall rule return a JSON 401. Confirm the API rejects unsigned tokens independently of the edge.
-- **Automation:** [auth tests](../tests/api/auth.spec.ts), `Authorization boundaries`. [`expectUnsignedTokenDenied`](../tests/api/knownDefectChecks.ts) requires the exact edge signature before the marker; any other status fails normally, and a 401 is an unexpected pass.
+   **Description / actual result:** The occupied time remains present and enabled after availability loads.
 
-All live state signatures above remain ordinary failed tests, not expected failures. See [state execution](STATE_EXECUTION.md) for timestamps, before/action/after evidence, and cleanup verification.
+   **How to reproduce:** Create and verify one future owned booking; open the booking form with the same doctor and date; inspect its time option.
 
-## Positive controls: current versus historical
+   **Expected result:** Exclude or disable a booked slot for that doctor/date under the proposed vacancy rule.
 
-**Passed this cycle:**
+   **Impact:** The form offers a conflicting booking choice; F-03 separately confirms the API accepts sequential duplicates.
 
-- Missing and malformed tokens rejected with 401 on all eight protected GET operations.
-- 2026-09-12: `GET /appointments/{id}` for another patient's appointment returned 403 with no appointment data; a token with an altered `user_id` claim and a signed `alg: none` token were rejected with 401 on `GET /users/me`.
-- Authenticated profile identity and selected fields agree with the DB; no top-level `password_hash` on that response.
-- Doctor list matches active DB records; detail fields and numeric fee agree.
-- Owned appointment list/detail agree with DB after the explicit F-15 date conversion.
-- Payment and notification IDs/fields match the authenticated account's DB records.
-- Invalid UI login gets a 401 response and visible feedback; valid login works; unauthenticated dashboard redirects.
-- Sidebar links open the correct URL and page heading; returning to Dashboard works.
-- DB table access works; the zero-row UPDATE is denied.
-- Isolated create, valid reschedule, delete/detail-404, and missing-doctor rejection matched API/DB expectations.
-- Booking doctor selection loaded availability and displayed the returned time options; no submission occurred in that UI check.
+   **Recommended action / limits:** Define date/timezone availability semantics and filter occupied slots. The published availability endpoint has no date parameter and may be a slot catalog; no backend root cause is established. Identical working hours across doctors alone are not a bug.
 
-**Historical only, not reverified here:** bcrypt password hashes were observed in storage; arbitrary-origin CORS access was not echoed; JWT lifetime was 24 hours. These do not establish complete authorization, CORS, or token-security coverage.
+   **Evidence / coverage:** [TC-UI-BOOK-008](../test-cases/ui/booking.md).
 
-## Deferred verification
+9. **F-21 — Next appointment shows a different record from the earliest eligible appointment**
 
-Use two controlled accounts and disposable owned records for future authorization checks. Do not mutate arbitrary seeded records belonging to other users.
+   **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-13 UI/DB check.
 
-Booking lifecycle and validation cases are implemented and executed, with failures above. Payment zero/negative/duplicate steps and attributable notification read are implemented but blocked by the payment safety stop; paid-record cleanup is only locally verified. Live profile round trip requires disposable-account/reset access. Concurrent booking, second-user authorization, expired tokens, logout semantics, bounded rate-limit checks, and availability failure/recovery UI coverage remain follow-ups.
+   **Description / actual result:** UI shows Dr. Carlos Méndez; the earliest eligible DB record belongs to Dr. María Fernández. Inspected card shows September 1, already past on the run date.
+
+   **How to reproduce:** Read patient appointments; select the earliest future active/pending record by date/time; open the dashboard.
+
+   **Expected result:** Display the earliest future eligible appointment, or an empty state if none exists.
+
+   **Impact:** Users can rely on the wrong doctor/date when planning their next visit.
+
+   **Recommended action / limits:** Use patient-scoped eligible data and chronological ordering with agreed timezone/status rules. Doctor equality failed first; later date/time/status assertions were not reached.
+
+   **Evidence / coverage:** [TC-UI-DASH-011](../test-cases/ui/dashboard.md).
+
+10. **F-23 — Upcoming appointments counter stays at 3 when data changes**
+
+   **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-13 controlled UI and real API/DB state checks.
+
+   **Description / actual result:** Controlled expectations 0 and 2 both display 3. Real DB count changes 3 → 4 → 3, but Upcoming remains 3 after creation/reload.
+
+   **How to reproduce:** Load an empty appointment response, then a response with two eligible appointments and reload. Separately create/delete a real marked future booking, checking DB and reloading after each change.
+
+   **Expected result:** Recalculate the count from current eligible patient appointments after reload.
+
+   **Impact:** The dashboard gives an incorrect summary and fails to acknowledge a newly booked visit.
+
+   **Recommended action / limits:** Derive the counter from current appointment data. Completed changed 0 → 1 and Cancelled 0 → 2 in controlled tests; those counters are not demonstrated to be static. Background push updates and a hardcoded source implementation were not established.
+
+   **Evidence / coverage:** [TC-UI-DASH-013/016](../test-cases/ui/dashboard.md).
+
+11. **F-22 — No login throttling observed within ten failed attempts**
+
+   **Priority:** P2 · **Severity:** Medium · **Status:** Bounded observation: 2026-09-13; enforcement policy unconfirmed.
+
+   **Description / actual result:** All ten responses are 401; no 429 is observed.
+
+   **How to reproduce:** Using the configured QA account and one deliberately invalid password, submit at most ten login requests and stop early on 429.
+
+   **Expected result:** Apply an agreed failed-login protection policy. OpenAPI declares 429 but specifies no threshold or time window; ten is the test’s proposed bound.
+
+   **Impact:** Repeated password attempts may be insufficiently restricted, but this sample does not prove unlimited attempts or a successful password compromise.
+
+   **Recommended action / limits:** Confirm account/IP scope, threshold and recovery; test against that policy. Simulated 429 UI feedback already passes.
+
+   **Evidence / coverage:** [TC-AUTH-RATE-001](../test-cases/api/rate-limit.md).
+
+12. **F-04 — Booking accepts a doctor who is already inactive**
+
+   **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-12 API/DB write run.
+
+   **Description / actual result:** HTTP 201; appointment 1132 persists against the inactive doctor.
+
+   **How to reproduce:** Select doctor 7 from the DB where is_active=false; submit an otherwise valid owned booking.
+
+   **Expected result:** Reject new bookings for inactive doctors under the proposed business rule.
+
+   **Impact:** Users can receive a booking with a doctor who is unavailable for new appointments.
+
+   **Recommended action / limits:** Validate current doctor eligibility on create. Existing appointments for a doctor deactivated later are a separate policy question.
+
+   **Evidence / coverage:** [TC-APT-013](../test-cases/api/appointments.md).
+
+13. **F-15 — Appointment dates are timestamps instead of the declared date-only format**
+
+   **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-13 consolidated API list/detail checks.
+
+   **Description / actual result:** Values include UTC-midnight timestamps such as 2026-09-12T00:00:00.000Z rather than YYYY-MM-DD.
+
+   **How to reproduce:** Read GET /api/appointments and an owned detail; compare raw appointment_date against the Appointment model.
+
+   **Expected result:** Serialize the calendar date as YYYY-MM-DD. Detail has no operation response schema; applying the Appointment model there is suite policy.
+
+   **Impact:** Strict consumers reject values; timezone interpretation may shift the displayed day. No actual UI shift was demonstrated.
+
+   **Recommended action / limits:** Serialize date-only values or agree an intentional contract change. TC-APT-001/002 now use soft contract assertions and continue DB reconciliation; standalone TC-APT-003/004 were retired. These failures are not marked expected.
+
+   **Evidence / coverage:** [Appointment cases](../test-cases/api/appointments.md).
+
+14. **F-01 — Doctor list omits fees and active status returned by detail**
+
+   **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-13 default run; suite completeness policy.
+
+   **Description / actual result:** List items omit consultation_fee and is_active; detail supplies them.
+
+   **How to reproduce:** Compare GET /api/doctors item fields with doctor detail and DB values.
+
+   **Expected result:** Expose agreed list-consumer fields or document an explicit list-specific schema.
+
+   **Impact:** Clients need extra detail requests for fees; field availability differs between list and detail.
+
+   **Recommended action / limits:** Agree required list fields. These properties are optional in OpenAPI: this is a suite completeness-policy failure, not a literal schema violation. Active-only list filtering passes.
+
+   **Evidence / coverage:** [Doctor cases](../test-cases/api/doctors.md).
+
+15. **F-14 — Patient-specific responses use public cache directives**
+
+   **Priority:** P3 · **Severity:** Low · **Status:** Reproduced: 2026-09-13 default run; no cross-user disclosure demonstrated.
+
+   **Description / actual result:** Cache-Control is public, max-age=0, must-revalidate.
+
+   **How to reproduce:** Read authenticated profile and appointment-list response headers.
+
+   **Expected result:** Apply an agreed cache policy appropriate for patient-specific data and intermediaries.
+
+   **Impact:** Headers warrant privacy review; a cross-user cache leak is not established. A 304 alone is normal revalidation.
+
+   **Recommended action / limits:** Review private/no-store requirements and intermediary behavior. Historical BYPASS/ETag observations are not a substitute for a leakage test.
+
+   **Evidence / coverage:** [Caching cases](../test-cases/api/caching.md).
+
+16. **F-20 — Empty-signature tokens receive an undocumented plain-text 403**
+
+   **Priority:** P3 · **Severity:** Low · **Status:** Reproduced: 2026-09-13 default run.
+
+   **Description / actual result:** The edge responds 403 text/plain with x-vercel-mitigated: deny instead of the documented 401.
+
+   **How to reproduce:** Remove the signature from a session token and request GET /api/users/me.
+
+   **Expected result:** An agreed, documented auth refusal that clients can handle.
+
+   **Impact:** Clients expecting JSON/401 may mishandle the response. Access is denied; this is not an authentication bypass.
+
+   **Recommended action / limits:** Document the edge response or align it with the API response; independently verify unsigned-token rejection at the API. Other altered-token controls returned 401.
+
+   **Evidence / coverage:** [Auth cases](../test-cases/api/auth.md).
+
+## UI feedback and observations
+
+These retain their IDs for traceability. They are not confirmed functional bugs and do not inflate the active bug list.
+
+17. **F-13 — Oversized dashboard banner**
+
+    **Priority:** P3 feedback · **Status:** measured again in the 2026-09-13 default run.
+
+    **Description:** /images/dashboard.png is 6,442,770 bytes (6.14 MiB). The former 512,000-byte limit was a proposed budget, not an agreed acceptance criterion; its automated failure case was retired as requested.
+
+    **Impact / suggestion:** unnecessary image transfer. Agree a budget, resize for rendered use and consider a compressed format. Historical dimensions and missing alt text were not remeasured. Do not present estimated transfer time as measured page-load time.
+
+18. **F-19 — Reported availability load failure was not reproduced**
+
+    **Priority:** no fix assigned · **Status:** tested path passes.
+
+    Selecting doctors loads returned slots. Controlled different-doctor replacement/reset and failure/recovery checks also pass (TC-UI-BOOK-005/006, 2026-09-13). Occupied-slot filtering is the separate confirmed F-05 issue. Slow responses and stale-response races remain untested. [Booking cases](../test-cases/ui/booking.md).
+
+19. **F-07 — Future-dated notification**
+
+    **Priority:** clarification · **Status:** historical observation; fixture intent and original timestamp unknown.
+
+    Stored created_at=2027-03-15 was future-dated relative to the observation. Confirm whether this was deliberate seed data before reporting an application clock defect.
+
+20. **F-08 — Confirmed versus active status terminology**
+
+    **Priority:** clarification · **Status:** no defect established.
+
+    UI uses Confirmed; API uses active/pending/completed/cancelled. A user-facing mapping can be intentional. Current dashboard tests assume active → Confirmed and pending → Pending; obtain product agreement on labels.
+
+21. **F-09 — Different decimal string formatting**
+
+    **Priority:** no fix assigned · **Status:** numeric reconciliation passes.
+
+    Values such as "120" and DB 120.00 are numerically equal. The contract models monetary amounts as strings. A display-format requirement must be agreed before this is a bug.
+
+22. **F-10 — Notification isRead versus DB is_read**
+
+    **Priority:** no fix assigned · **Status:** documented mapping; reconciliation passes.
+
+    API camelCase and DB snake_case are intentional representations in the supplied contract. This is not a field mismatch defect.
+
+23. **F-11 — Nonnumeric doctor identifier returns 404**
+
+    **Priority:** clarification · **Status:** historical observation; not rerun.
+
+    GET /doctors/abc reportedly returned 404. No agreed rule requires 400. Current not-found coverage uses an unused numeric ID; clarify invalid-path policy before assigning a bug.
+
+## Latest verified controls and remaining gaps
+
+Across all 85 automated cases, the latest recorded results are **64 passed, 4 expected failures, 16 failed and 1 skipped** ([per-case results](../test-cases/README.md#results-summary)). Every failure reproduces a finding above. The failure count is not the bug count: F-12 fails three cases, and F-15 and F-23 two each.
+
+Completed and Cancelled counters update with controlled data after reload. Quick Actions, sidebar destinations, New Appointment, logout with Back/direct-route/reload checks, required fields, malformed email, availability failure/recovery, and simulated 429 feedback pass. DB connection/table access and write denial pass. The earlier point-in-time Upcoming match was insufficient: later change-based tests establish F-23.
+
+Earlier API runs verified owned data reconciliation, token refusal and selected authorization controls; matching corrupted stored data does not establish a correct profile write. The old expected-failure handling of F-15 and automated image budget no longer describe the current suite.
+
+Remaining gaps: concurrent duplicates; a second controlled user for broader authorization; expired tokens and server-side logout revocation; successful UI booking persistence; real cancellation/completion-driven counter changes; empty next-appointment branch; stale availability races and date/doctor controls; rate-limit threshold/recovery/scope; disposable profile reset; payment follow-on cases and attributable notification mutation. Background live updates and product timezone semantics are unconfirmed. Browser logout, bounded login attempts, and availability failure/recovery are completed checks, not wholly deferred work.

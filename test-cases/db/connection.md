@@ -14,8 +14,8 @@ These cases protect the premise of the whole suite: the DB is a **read-only orac
 | Project / tag | db / — |
 | Type | Environment, smoke |
 | Priority / basis | P1 / P |
-| Catalog / finding | — / — |
-| Last recorded | Pass (2026-09-12) |
+| Finding | — |
+| Last recorded | Pass (2026-09-13) |
 
 **Preconditions:** DB host, port, name, user, and password are configured in `.env`, and the host is reachable.
 
@@ -35,8 +35,8 @@ These cases protect the premise of the whole suite: the DB is a **read-only orac
 | Project / tag | db / — |
 | Type | Security, safety guard |
 | Priority / basis | P0 / P |
-| Catalog / finding | — / — |
-| Last recorded | Pass (2026-09-12): the UPDATE was denied |
+| Finding | — |
+| Last recorded | Pass (2026-09-13): the UPDATE was denied |
 
 **Preconditions:** same as TC-DB-001.
 

@@ -14,8 +14,8 @@ Expected values come from `db.activeDoctors()`: `doctors where is_active order b
 | Project / tag | api / — |
 | Type | Functional, contract, data reconciliation |
 | Priority / basis | P1 / C (status, `Doctor[]` schema, active-only list), P (exact ID set and field values against the DB) |
-| Catalog / finding | API-DOC-01 / — |
-| Last recorded | Pass (2026-09-12) |
+| Finding | — |
+| Last recorded | Pass (2026-09-13) |
 
 **Preconditions:** a valid session token and a read-only DB connection.
 
@@ -39,8 +39,8 @@ Expected values come from `db.activeDoctors()`: `doctors where is_active order b
 | Project / tag | api / — |
 | Type | Contract (suite policy), known defect |
 | Priority / basis | P1 / P. This is **not** a literal OpenAPI violation. |
-| Catalog / finding | API-DOC-02 / **F-01** |
-| Last recorded | Expected failure, F-01 (2026-09-12). Every list entry omitted only `is_active` and `consultation_fee`. |
+| Finding | **F-01** |
+| Last recorded | Expected failure, F-01 (2026-09-13). Every list entry omitted only `is_active` and `consultation_fee`. |
 
 **Preconditions:** a valid session token. At least one doctor must be listed, or the case is skipped.
 
@@ -62,8 +62,8 @@ Expected values come from `db.activeDoctors()`: `doctors where is_active order b
 | Project / tag | api / — |
 | Type | Functional, contract, data reconciliation |
 | Priority / basis | P1 / C (status, schema, fee as a string), P (completeness, DB values, numeric fee equivalence) |
-| Catalog / finding | API-DOC-04 / F-09 (decimal formatting: compare numerically) |
-| Last recorded | Pass (2026-09-12) |
+| Finding | F-09 (decimal formatting: compare numerically) |
+| Last recorded | Pass (2026-09-13) |
 
 **Preconditions:** at least one active doctor exists in the DB. Otherwise the case is skipped.
 
@@ -87,8 +87,8 @@ Expected values come from `db.activeDoctors()`: `doctors where is_active order b
 | Project / tag | api / — |
 | Type | Functional, contract |
 | Priority / basis | P1 / C (200, `time_slots` string array), P (field required, `HH:mm` format, uniqueness) |
-| Catalog / finding | API-DOC-07 / F-05 (catalog versus date-specific vacancy is unclear) |
-| Last recorded | Pass (2026-09-12) |
+| Finding | — (whether slots are a static catalog or date-specific vacancy is open; see F-05) |
+| Last recorded | Pass (2026-09-13) |
 
 **Preconditions:** at least one active doctor exists. Otherwise the case is skipped.
 
@@ -100,7 +100,7 @@ Expected values come from `db.activeDoctors()`: `doctors where is_active order b
 | 4 | Check each slot. | It matches the 24-hour clock `^(?:[01]\d\|2[0-3]):[0-5]\d$`, for example `09:00`. `25:99` and `9:00` are rejected. |
 | 5 | Check for duplicates. | `new Set(slots).size === slots.length`, so there are no duplicate slots. |
 
-**Not covered here:** date-specific vacancy (no date query parameter is documented), an empty catalog, and unknown or inactive doctor availability (API-DOC-08/09).
+**Not covered here:** date-specific vacancy (no date query parameter is documented), an empty catalog, and unknown or inactive doctor availability.
 
 ---
 
@@ -112,8 +112,8 @@ Expected values come from `db.activeDoctors()`: `doctors where is_active order b
 | Project / tag | api / — |
 | Type | Functional, negative |
 | Priority / basis | P1 / C |
-| Catalog / finding | API-DOC-05 / — |
-| Last recorded | Pass (2026-09-12) |
+| Finding | — |
+| Last recorded | Pass (2026-09-13) |
 
 **Test data:** `db.unusedDoctorId()` returns `coalesce(max(id), 0) + 1` from `doctors`, computed at run time. It is not hard-coded.
 

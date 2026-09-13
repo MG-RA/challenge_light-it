@@ -12,8 +12,8 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:7](../../tests/ui/
 |---|---|
 | Type | Functional, navigation |
 | Priority | P1 |
-| Catalog / finding | — / — |
-| Last recorded | Pass for all 4 (2026-09-12) |
+| Finding | — |
+| Last recorded | Pass for TC-UI-NAV-001…004 (2026-09-13) |
 
 ---
 
@@ -71,3 +71,47 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:7](../../tests/ui/
 | 2 | Click the **Doctors** sidebar link. | The Doctors `h1` is visible. |
 | 3 | Click the **Dashboard** sidebar link. | The URL ends with `/dashboard`. |
 | 4 | Observe the page. | The dashboard greeting heading is visible. |
+
+---
+
+## TC-UI-NAV-005: Sidebar logout clears the session and protects routes
+
+| Field | Value |
+|---|---|
+| Automated test | [navigation.spec.ts:28](../../tests/ui/navigation.spec.ts:28) › `sidebar logout clears the session and protects routes after reload and back` |
+| Project / tag | ui / — |
+| Type | Security, session handling |
+| Priority | P0 |
+| Finding | — |
+| Last recorded | Pass (2026-09-13) |
+
+**Preconditions:** valid credentials and an available login attempt. The case logs in with a **fresh** session, so logging out cannot invalidate the shared setup token. This adds one login.
+
+| # | Action | Expected result |
+|---|---|---|
+| 1 | Clear cookies and `localStorage`, open `/login` and log in with the configured credentials. | The URL ends with `/dashboard`. |
+| 2 | Click the sidebar **Logout** button. | The URL ends with `/login`, and `localStorage.token` is `null`. |
+| 3 | Go back in browser history. | The URL still ends with `/login`. |
+| 4 | Navigate directly to `/appointments`. | Redirected; the URL ends with `/login`. |
+| 5 | Reload. | **Sign In** is visible. |
+
+**Limits:** checks browser session termination, not server-side revocation of the old token.
+
+---
+
+## TC-UI-NAV-006: Sidebar New Appointment opens the booking form
+
+| Field | Value |
+|---|---|
+| Automated test | [navigation.spec.ts:47](../../tests/ui/navigation.spec.ts:47) › `sidebar New Appointment opens booking form` |
+| Project / tag | ui / — |
+| Type | Functional, navigation |
+| Priority | P1 |
+| Finding | — |
+| Last recorded | Pass (2026-09-13) |
+
+| # | Action | Expected result |
+|---|---|---|
+| 1 | Open `/dashboard`. | The dashboard loads. |
+| 2 | Click the sidebar **New Appointment** link. | The URL ends with `/appointments/new`. |
+| 3 | Observe the form. | The **Book Appointment** submit button (`data-testid="submit-appointment"`) is visible. |

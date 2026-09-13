@@ -1,10 +1,6 @@
 # QA plan — MedAppoint
 
-Owner: QA. Version 1.0, drafted 2026-09-12. **This is the entry point.** Every other document under
-`docs/` is either a catalog, a dated record, or an archive; see [§11 Document map](#11-document-map).
-
-Read in this order: this plan → [test cases](docs/API_TEST_CASES.md) → [findings](docs/FINDINGS.md) →
-the latest dated run record.
+Updated 2026-09-13. Companion documents: [README](README.md) (setup and commands), [FINDINGS](docs/FINDINGS.md) (defects) and [test cases](test-cases/README.md) (every automated test with its latest result).
 
 ---
 
@@ -45,20 +41,20 @@ that mutates records we do not own.
 
 ## 3. Risk register
 
-Priorities drive test order and release gates. Status reflects the repo as of 2026-09-12.
+Priorities drive test order and release gates. Status reflects the repo as of 2026-09-13.
 
 | # | Risk | Priority | Current coverage | Status |
 |---|---|---|---|---|
 | R1 | One patient can read or modify another's records | **P0** | Own-record reconciliation vs DB; missing/malformed token on 8 protected GETs; cross-patient appointment read (403); altered `user_id`, `alg:none` and empty-signature tokens on profile | **Partial** — cross-user writes and list isolation need User B; F-20 open (edge 403) |
 | R2 | A write reports success but does not persist | **P0** | Write cases assert the stored row after every write | **Failing** — F-16 cancel, F-18 payment |
-| R3 | Invalid bookings are accepted and stored | **P0** | Past date, invalid clock, inactive doctor, duplicate slot | **Failing** — F-02, F-03, F-04, F-12, F-17; Q-tier, not yet a gate (pending §12 Q1–3) |
-| R4 | Payment integrity (amount, ownership, duplication) | P1 | Valid step only; zero/negative/duplicate implemented but blocked | **Blocked** by the F-18 safety stop |
-| R5 | Authentication weaknesses (expiry, logout, rate limit) | P1 | Login success/failure only | **Partial** |
+| R3 | Invalid bookings are accepted and stored | **P0** | API: past date, invalid clock, inactive doctor, duplicate slot, invalid reschedule. UI: past-date validation, occupied-slot selection | **Failing** — F-02, F-03, F-04, F-05, F-12, F-17; Q-tier, not yet a gate (pending §12 Q1–4) |
+| R4 | Payment integrity (amount, ownership, duplication) | P1 | Valid step only; zero/negative/duplicate implemented but not reached | **Blocked** — the valid payment fails first (F-18) |
+| R5 | Authentication weaknesses (expiry, logout, rate limit) | P1 | API login failure; bounded failed-login probe; UI login, field validation, 429 feedback and logout | **Failing** — F-22 no throttle within ten attempts; token expiry and server-side revocation untested |
 | R6 | Contract drift between spec, API and DB | P1 | Literal schema + completeness policy on read paths | **Partial** — F-01, F-15 open |
 | R7 | Sensitive data in responses, caches or CI artifacts | P1 | Cache-header cases; redacted matcher diagnostics | **Partial** — F-14 open; traces/screenshots unredacted |
-| R8 | UI journeys break for real users | P2 | Login, redirect, dashboard, sidebar, availability load | **Partial** — no booking journey |
+| R8 | UI journeys break for real users | P2 | Login, redirect, logout, dashboard greeting/counters/next appointment/Quick Actions, sidebar, booking availability, validation and failure recovery | **Failing** — F-21 next appointment, F-23 counter; no successful UI booking journey |
 | R9 | Accessibility, mobile, cross-browser regressions | P3 | None | **Uncovered** |
-| R10 | Performance budgets | P3 | One image-size budget | **Partial** — F-13 open |
+| R10 | Performance budgets | P3 | None automated; banner size recorded as feedback | **Uncovered** — F-13 feedback, budgets not agreed |
 
 ## 4. Test approach
 
@@ -76,7 +72,7 @@ Layers:
    operations; and, once User B exists, every cross-user read and write.
 4. **Write behavior** — one API write, then bounded polling of the stored row (200 ms interval,
    4 s bound, 1 s stable window), then verified teardown.
-5. **UI journeys** — real navigation and real network traffic; no mocking of the product API.
+5. **UI journeys** — real navigation and network traffic by default. Where a backend defect or live data would hide UI behavior (validation, availability failure, counter refresh, 429 feedback), a case controls the API response and says so; those cases prove UI behavior only.
 
 ### 4.1 Oracle tiers — the rule that keeps claims honest
 
@@ -100,11 +96,15 @@ A known defect gets its own test. Status, shape, unrelated fields and data preco
 therefore surfaces as an *unexpected pass* for review rather than silently staying green. Never mark
 a whole test body as expected-to-fail.
 
+The marker is used only for stable read-path signatures (F-01, F-14, F-20). Write, UI and
+business-rule defects stay **ordinary failures**, so a red run keeps them visible; contract drift that
+would otherwise stop DB reconciliation (F-15) uses a soft assertion instead.
+
 ### 4.3 Documented exception
 
 **F-15:** the API returns appointment dates as UTC-midnight timestamps instead of `YYYY-MM-DD`.
 Read-side tests convert that one exact representation and validate everything else normally;
-separate list/detail contract cases keep the mismatch visible. Non-midnight values, offsets,
+soft date-format assertions in the list and detail reconciliation cases (TC-APT-001/002) keep the mismatch visible. Non-midnight values, offsets,
 malformed and impossible dates still fail. The published schema is not modified.
 
 ## 5. Environment, data and accounts
@@ -112,15 +112,16 @@ malformed and impossible dates still fail. The published schema is not modified.
 - **Single shared remote environment.** No dedicated test environment, no fixture seeding, no reset.
   External concurrent writes can produce genuine mismatches; treat an isolated reconciliation failure
   as environmental only after re-observing it.
-- **One account for all workers.** Login is rate-limited. A full default run performs four login
-  attempts (setup, API bad password, UI success, UI bad password). Avoid repeated full runs and never
-  load-test login.
+- **One account for all workers.** Login is rate-limited. A full default run performs five login
+  attempts (setup, API bad password, UI success, UI bad password, UI logout session). The opt-in
+  rate-limit check adds up to ten failed attempts; run it alone and last. Never load-test login.
 - **Discover data at runtime** from the DB. No hard-coded seeded IDs. When no eligible record exists,
   skip conditionally with an explicit reason — skips must appear in the run summary, never be silent.
 - **Owned data only.** Created appointments carry a cryptographically unique run marker in `notes`.
   Only a row this run created *and* still owns may be rescheduled, cancelled, deleted or paid.
 - **Caps:** 20 booking submissions and 4 payments on one dedicated appointment, per worker process.
-  Expand variants in separately scoped runs; never raise caps implicitly.
+  A failed test restarts the worker and resets them, so they are not a run-wide budget. Expand
+  variants in separately scoped runs; never raise caps implicitly.
 - **Teardown deletes what the test created and verifies absence.** A DELETE is never retried. A paid
   appointment that cannot be deleted is cancelled and annotated as residue.
 - **Config:** `.env` from `.env.example`; secrets never committed; `.auth/` git-ignored.
@@ -131,7 +132,9 @@ malformed and impossible dates still fail. The published schema is not modified.
 |---|---|---|---|
 | Default regression | `npm test` | `@mutating` excluded by `grepInvert` | 4 workers local, 2 CI; 0 retries local, 1 CI |
 | Per surface | `npm run test:api` / `test:ui` / `test:db` | project filter | as above |
-| Writes | `RUN_MUTATING=1 npm run test:writes` | `@mutating` only | **1 worker, 0 retries, declaration order, 90 s timeout** |
+| API writes | `RUN_MUTATING=1 npm run test:writes` | `@mutating` in `api` | **1 worker, 0 retries, declaration order, 90 s timeout** |
+| UI writes | `RUN_MUTATING=1 npx playwright test tests/ui/booking-state.spec.ts tests/ui/dashboard-state.spec.ts --project=ui --workers=1` | `@mutating` in `ui` | as above |
+| Rate limit | `RUN_RATE_LIMIT=1 npx playwright test tests/api/rate-limit.spec.ts --project=api --no-deps --workers=1` | one case; skipped otherwise | 1 worker, 0 retries |
 | Static | `npm run typecheck` / `npm run lint` | — | — |
 
 `RUN_MUTATING` accepts unset, `0`, `false` or `1`; any other value fails configuration. Only `1`
@@ -143,12 +146,13 @@ settings were overridden or if the token identity is not the configured DB accou
 - Every PR and every push to `main`: typecheck, lint, default regression (CI, Chromium).
 - Write suite: **manual, deliberate, with permission**. Never scheduled, never in PR CI. It writes to
   a shared production-like target and can leave documented payment/notification residue.
-- Before any submission or milestone: one default run plus one write run, both recorded in
-  `docs/runs/` on the same day.
+- Before any submission or milestone: one default run plus one write run on the same day, with
+  results recorded in the test cases and findings.
 
 **Reporting:** HTML + list + JSON locally; CI adds JUnit and GitHub annotations and retains artifacts
-14 days. `test-results/results.json` separates actual from expected status. Each run's durable,
-sanitized summary goes in `docs/runs/YYYY-MM-DD-<suite>.md`.
+14 days. `test-results/results.json` separates actual from expected status. The durable
+record is each case's **Last recorded** result in [test-cases/](test-cases/README.md) and the
+evidence status in [FINDINGS](docs/FINDINGS.md); raw reports stay local and unsanitized.
 
 ## 7. Entry and exit criteria
 
@@ -163,7 +167,7 @@ installed, `.env` populated, prior run's residue confirmed cleaned.
 3. Write-run outcomes, blocked steps and skips are recorded honestly; blocked steps are never
    reported as passes.
 4. Cleanup verified: created rows absent, residue within documented boundaries and annotated.
-5. A dated run record exists, and plan, catalog and findings agree with it.
+5. Test-case results, findings and this plan are updated and agree with the run.
 
 **Release gates** — what QA blocks on, as opposed to reports:
 
@@ -191,23 +195,22 @@ show both.
 
 ## 9. Current coverage baseline
 
-Discovery on 2026-09-12, from the working tree:
+Discovery on 2026-09-13 (`npm run test:list`):
 
 | Suite | setup | api | db | ui | total |
 |---|---:|---:|---:|---:|---:|
-| Default (`npm test`) | 1 | 35 | 2 | 11 | **49** |
-| With `RUN_MUTATING=1` | 1 | 48 | 2 | 11 | **62** |
+| Default (`npm test`) | 1 | 34 | 2 | 33 | **70** |
+| With `RUN_MUTATING=1` | 1 | 47 | 2 | 35 | **85** |
 
-13 write cases. Live endpoint coverage reaches **14 of 17 operations**; `POST /auth/logout`,
-`PUT /users/me` and `PUT /notifications/{id}/read` have no live coverage. Calling an operation is not
-case coverage — the [catalog](docs/API_TEST_CASES.md) designs 77 case groups, most still planned.
+15 write cases (13 API, 2 UI). The default count includes the rate-limit case, which skips unless
+`RUN_RATE_LIMIT=1`. Live endpoint coverage reaches **14 of 17 operations**: `POST /auth/logout` and
+`PUT /users/me` have no API coverage, and `PUT /notifications/{id}/read` is automated but skips
+without an attributable notification. Calling an operation is not case coverage; remaining gaps are
+in §10.
 
-**Latest recorded runs (2026-09-12):**
-
-- [Default](docs/runs/2026-09-12-default.md): 42 passes, 7 expected failures (F-01, F-13, F-14×2, F-15×2, F-20), 0 unexpected.
-- [Writes](docs/runs/2026-09-12-writes.md): 5 passes, 8 failures (F-02/03/04/12×2/16/17/18), 1 skip; residue check clean.
-
-`docs/EXECUTION.md` and `docs/STATE_EXECUTION.md` describe an older tree and are historical only.
+**Latest recorded results** (API writes 2026-09-12; API reads, UI, DB and rate limit 2026-09-13):
+**64 passed, 4 expected failures (F-01, F-14 ×2, F-20), 16 failed, 1 skipped**. Every failure
+reproduces a finding. Per-case results are in the [test-case matrix](test-cases/README.md#traceability-matrix).
 
 ## 10. Roadmap
 
@@ -216,9 +219,10 @@ is unmet — record it as blocked instead.
 
 **Wave 0 — restore a trustworthy baseline** *(no prerequisites; do this first)*
 
-- ~~Run default + write suites once, record both in `docs/runs/`, retire the stale totals.~~ Done 2026-09-12.
-- Execute the document consolidation in [§11](#11-document-map).
-- Either fill `exploratory.md` with the session notes it was meant to hold, or delete it.
+- ~~Run default + write suites once and retire the stale totals.~~ Done 2026-09-12.
+- ~~Consolidate documentation into README, this plan, FINDINGS and test cases.~~ Done 2026-09-13.
+- Run the full default, write and rate-limit suites on one day against the current tree, so every
+  case's last result comes from the same code.
 
 **Wave 1 — close the P0 gap** *(prerequisite: User B account + token)*
 
@@ -240,20 +244,23 @@ is unmet — record it as blocked instead.
 - Per-operation inline response validation; each required field omitted in its own case.
 - ID boundary cases (`abc`, `1.5`, `0`, `-1`, large integers) on every `{id}` route.
 - Ownership-override attempts via extra body fields.
-- Unknown availability (DOC-08), unknown appointment (APT-15), explicit login contract (AUTH-01).
+- Unknown doctor availability, unknown appointment detail, and an explicit login response contract.
 
 **Wave 4 — blocked-by-access work** *(prerequisites named per item)*
 
 - Profile round trip — needs a disposable account or reliable reset (F-06).
 - Notification read — needs an attributable generated notification.
-- Logout semantics and token expiry — need a separate controlled session.
-- Bounded rate-limit probe — needs a controlled environment and agreed bounds.
+- Server-side logout revocation and token expiry — need a separate controlled session. Browser
+  logout is covered (TC-UI-NAV-005).
+- Rate-limit threshold, recovery time and account-versus-IP scope — need agreed bounds. The bounded
+  ten-attempt probe is done (TC-AUTH-RATE-001, F-22).
 
 **Wave 5 — UI and non-functional** *(no prerequisites)*
 
-- Booking → cancellation UI journey; availability failure and recovery, extending F-19.
+- Successful booking → cancellation UI journey; empty next-appointment branch; stale availability
+  races. Validation, availability failure/recovery and occupied-slot checks are done.
 - axe accessibility smoke on login and dashboard; mobile viewport; Firefox and WebKit.
-- Agreed performance budgets beyond the single image check (F-13).
+- Agreed performance budgets (F-13); no image budget is automated.
 
 **Standing engineering follow-ups:** trusted-CA DB TLS — certificate verification is currently
 disabled — artifact redaction beyond the matcher, and artifact retention appropriate to the data.
@@ -262,17 +269,13 @@ disabled — artifact redaction beyond the matcher, and artifact retention appro
 
 | Document | Role |
 |---|---|
-| [README.md](README.md) | Submission entry point, setup and commands |
-| [QA_PLAN.md](QA_PLAN.md) | Authoritative plan: scope, risks, approach, gates and roadmap |
-| [test-cases/README.md](test-cases/README.md) | Implemented UI, API and DB case map |
-| [docs/API_TEST_CASES.md](docs/API_TEST_CASES.md) | Broader API design catalog; not all cases automated |
-| [docs/FINDINGS.md](docs/FINDINGS.md) | Defect register and evidence |
-| [docs/WRITE_TESTING.md](docs/WRITE_TESTING.md) | Write commands, ownership, caps and cleanup limits |
-| [Latest default run](docs/runs/2026-09-13-default.md) | Current read-only execution and submission refinements |
-| [Latest write run](docs/runs/2026-09-12-writes.md) | Current live write evidence; not rerun during final review |
-| `TEST_STRATEGY.md`, `docs/EXECUTION.md`, `docs/STATE_EXECUTION.md`, `docs/AUDIT.md` | Historical records retained to preserve evidence and existing links |
+| [README.md](README.md) | Entry point: current state, setup and commands |
+| [QA_PLAN.md](QA_PLAN.md) | Scope, risks, approach, gates and roadmap |
+| [docs/FINDINGS.md](docs/FINDINGS.md) | Prioritized defect register with reproduction and evidence |
+| [test-cases/](test-cases/README.md) | One written case per automated test, with latest results |
+| [docs/openapi.json](docs/openapi.json) | Supplied contract snapshot used by contract validation; never edited |
 
-Keep current run totals in dated records, operational write mechanics in the runbook, and planned coverage separate from implemented cases. The empty local `exploratory.md` is not a submission deliverable.
+Keep results in the test cases, defects in FINDINGS, and planned coverage in §10.
 
 ## 12. Open questions for the product owner
 

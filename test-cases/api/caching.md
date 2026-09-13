@@ -2,7 +2,7 @@
 
 Spec: [tests/api/caching.spec.ts](../../tests/api/caching.spec.ts) · Project: `api` (depends on `setup`)
 
-Both cases are **known-defect** cases (F-14). All preconditions are validated **before** the `test.fail` marker in `cacheHeaderForCheck` ([knownDefectChecks.ts:16](../../tests/api/knownDefectChecks.ts:16)). This way an unrelated regression, such as a wrong status, a schema break, or a *different* unsafe header, still fails as unexpected.
+Both cases are **known-defect** cases (F-14). All preconditions are validated **before** the `test.fail` marker by `cacheHeaderForCheck` ([knownDefectChecks.ts:23](../../tests/api/knownDefectChecks.ts:23)). This way an unrelated regression, such as a wrong status, a schema break, or a *different* unsafe header, still fails as unexpected.
 
 When F-14 is fixed, Playwright reports an **unexpected pass**. Remove the `test.fail` line and update the finding.
 
@@ -16,8 +16,8 @@ When F-14 is fixed, Playwright reports an **unexpected pass**. Remove the `test.
 | Project / tag | api / — |
 | Type | Security, HTTP headers |
 | Priority / basis | P1 / P |
-| Catalog / finding | API-SEC-04 / **F-14** (annotation `issue`) |
-| Last recorded | Expected failure, F-14 (2026-09-12). Header was `public, max-age=0, must-revalidate`. |
+| Finding | **F-14** (annotation `issue`) |
+| Last recorded | Expected failure, F-14 (2026-09-13). Header was `public, max-age=0, must-revalidate`. |
 
 **Preconditions:** a valid session token.
 
@@ -38,8 +38,8 @@ When F-14 is fixed, Playwright reports an **unexpected pass**. Remove the `test.
 | Project / tag | api / — |
 | Type | Security, HTTP headers |
 | Priority / basis | P1 / P |
-| Catalog / finding | API-SEC-04 / **F-14**. Body validation uses the F-15 compatibility path. |
-| Last recorded | Expected failure, F-14 (2026-09-12). Header was `public, max-age=0, must-revalidate`. |
+| Finding | **F-14**. Body validation uses the F-15 compatibility path. |
+| Last recorded | Expected failure, F-14 (2026-09-13). Header was `public, max-age=0, must-revalidate`. |
 
 **Preconditions:** a valid session token.
 

@@ -137,10 +137,6 @@ export class Db {
     );
   }
 
-  appointmentIdsWithNotes(notes: string) {
-    return this.query<{ id: number }>('select id from appointments where notes = $1', [notes]);
-  }
-
   paymentsForPatient(patientId: number) {
     return this.query<PaymentRow>(
       `select p.id, p.appointment_id, p.amount, p.method, p.status

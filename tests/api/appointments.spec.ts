@@ -9,8 +9,9 @@ import { dateAfter, test, expect } from './writes';
 
 test.describe('Appointments API', () => {
   test('GET /appointments contains only the patient records and matches the DB', async ({ api, db, testUser }) => {
-    const { appointments } = await readAppointments(await api.listAppointments(), 'list');
+    const { appointments, dateFormatViolations } = await readAppointments(await api.listAppointments(), 'list');
     const rows = await db.appointmentsForPatient(testUser.id);
+    expect.soft(dateFormatViolations, 'F-15: appointment date contract').toEqual([]);
     expect(appointments.map((a) => a.id).toSorted((a, b) => a - b)).toEqual(rows.map((a) => a.id));
     for (const appointment of appointments) {
       expect(appointment.patient_id).toBe(testUser.id);
@@ -22,26 +23,12 @@ test.describe('Appointments API', () => {
     const [row] = await db.appointmentsForPatient(testUser.id);
     test.skip(!row, 'No owned appointment available for detail coverage');
     if (!row) return;
-    const { appointments: [appointment] } = await readAppointments(await api.getAppointment(row.id), 'detail');
+    const { appointments: [appointment], dateFormatViolations } = await readAppointments(await api.getAppointment(row.id), 'detail');
+    expect.soft(dateFormatViolations, 'F-15: appointment date contract').toEqual([]);
     expect(appointment).toMatchObject({ ...row });
     expect(appointment!.patient_id).toBe(testUser.id);
   });
 
-  for (const kind of ['list', 'detail'] as const) {
-    test(`appointment ${kind} uses the OpenAPI date-only format`,
-      { annotation: { type: 'issue', description: 'F-15: appointment_date is a timestamp, not date (docs/FINDINGS.md)' } },
-      async ({ api, db, testUser }) => {
-        const [row] = await db.appointmentsForPatient(testUser.id);
-        test.skip(!row, 'No owned appointment available for date-format coverage');
-        if (!row) return;
-        const response = await (kind === 'list' ? api.listAppointments() : api.getAppointment(row.id));
-        const { appointments, dateFormatViolations } = await readAppointments(response, kind);
-        expect(appointments.length).toBeGreaterThan(0);
-        for (const appointment of appointments) expect(appointment.patient_id).toBe(testUser.id);
-        test.fail(true, 'F-15: only exact UTC-midnight timestamp serialization may fail');
-        expect(dateFormatViolations).toEqual([]);
-      });
-  }
 });
 
 // Writes owned, marked appointments on the shared target and removes them afterwards.
