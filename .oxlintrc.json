@@ -51,7 +51,7 @@
   "overrides": [
     {
       // Specs describe behavior; locators, network stubs and matchers come from src/.
-      "files": ["tests/**/*.ts"],
+      "files": ["tests/**/*.ts", "extras/**/*.ts"],
       "rules": {
         "playwright/no-raw-locators": "error",
         "typescript/no-restricted-imports": [

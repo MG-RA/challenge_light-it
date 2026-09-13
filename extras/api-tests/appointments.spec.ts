@@ -90,25 +90,7 @@ test.describe('Appointments API writes', { tag: '@mutating' }, () => {
     expect(detail).toMatchObject(stored);
   });
 
-  test('PUT /appointments/:id/reschedule stores the new slot and preserves identity', async ({
-    owned,
-    db,
-    testUser,
-  }) => {
-    const booked = await owned.book();
-    const next = await owned.freeSlot(booked.doctor, booked.row);
-    const { appointment_date, time_slot } = next.body;
-    const result = await owned.reschedule(booked.id, { appointment_date, time_slot });
-    expect(result.status, 'reschedule response status').toBe(200);
-    await expectStoredAppointment(db, booked.id, testUser.id, {
-      appointment_date,
-      time_slot,
-      id: booked.id,
-      patient_id: testUser.id,
-      doctor_id: booked.row.doctor_id,
-      notes: booked.marker,
-    });
-  });
+  // Rescheduling is covered by the Postman collection (part-3-postman) and the UI flow (tests/ui).
 
   test('PUT /appointments/:id/cancel stores the cancellation without touching a control', async ({
     owned,
@@ -184,19 +166,5 @@ test.describe('Appointments API writes', { tag: '@mutating' }, () => {
     expect.soft([400, 409], 'proposed conflict expectation').toContain(second.status);
     await expectNothingStored(db, second.marker, testUser.id);
     await expectAppointmentUnchanged(db, testUser.id, first.row);
-  });
-
-  test('PUT /appointments/:id/reschedule rejects an invalid body and stores no change', async ({
-    owned,
-    db,
-    testUser,
-  }) => {
-    const booked = await owned.book();
-    const result = await owned.reschedule(booked.id, {
-      appointment_date: dateAfter(-1),
-      time_slot: '25:99',
-    });
-    expect.soft([400, 409], 'proposed business validation expectation').toContain(result.status);
-    await expectAppointmentUnchanged(db, testUser.id, result.before);
   });
 });

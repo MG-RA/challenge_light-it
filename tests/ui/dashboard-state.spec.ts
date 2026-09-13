@@ -1,4 +1,4 @@
-import { test, expect } from '../api/writes';
+import { test, expect } from '../../extras/api-tests/writes';
 import { isUpcoming } from '../../src/support/dates';
 
 test(

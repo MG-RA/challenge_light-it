@@ -38,7 +38,8 @@ jobs:
       # Non-secret settings read a repository variable first, then a secret of the same name;
       # variables keep URLs readable in logs, while secret values are masked as ***.
       # A missing value fails fast in src/config/env.ts.
-      - run: npx playwright test
+      # Part 4 UI flows, plus the read-only extras (API contract, authorization and database checks).
+      - run: npx playwright test --project=ui --project=extras-api
         env:
           BASE_URL: ${{ vars.BASE_URL || secrets.BASE_URL }}
           API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}

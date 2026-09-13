@@ -1,4 +1,4 @@
-import { test, expect } from '../api/writes';
+import { test, expect } from '../../extras/api-tests/writes';
 
 test(
   'booked doctor date and slot cannot be selected again',

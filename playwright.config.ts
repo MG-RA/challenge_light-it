@@ -12,7 +12,6 @@ const listing = process.argv.includes('--list');
 const parallelWorkers = process.env.CI ? 2 : 4;
 
 export default defineConfig<TestOptions>({
-  testDir: './tests',
   // Writes run sequentially, in declaration order, and are never retried.
   fullyParallel: !mutating,
   forbidOnly: !!process.env.CI,
@@ -44,18 +43,27 @@ export default defineConfig<TestOptions>({
   },
 
   projects: [
-    { name: 'setup', testMatch: /auth\.setup\.ts/ },
-    {
-      // API clients come from fixtures, which use the `apiBaseURL` option (defaults to API_BASE_URL).
-      name: 'api',
-      testDir: './tests/api',
-      dependencies: ['setup'],
-    },
+    // Part 4: the UI flows. `npm test` runs these (plus the login setup they depend on).
+    { name: 'setup', testDir: './tests', testMatch: /auth\.setup\.ts/ },
     {
       name: 'ui',
       testDir: './tests/ui',
       use: { ...devices['Desktop Chrome'], storageState: AUTH_STATE_FILE },
       dependencies: ['setup'],
+    },
+
+    // Extras: API contract, authorization and database checks. `npm run test:extras` runs these.
+    {
+      name: 'extras-setup',
+      testDir: './extras/api-tests',
+      testMatch: /contract\.setup\.ts/,
+      dependencies: ['setup'],
+    },
+    {
+      // API clients come from fixtures, which use the `apiBaseURL` option (defaults to API_BASE_URL).
+      name: 'extras-api',
+      testDir: './extras/api-tests',
+      dependencies: ['extras-setup'],
     },
   ],
 });

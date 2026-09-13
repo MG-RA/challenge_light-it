@@ -24,7 +24,7 @@ results, and requested a more focused final submission.
 - **Code is checked by tools:** type checking, lint, formatting and test runs against the live environment after every change, plus GitHub Actions.
 - **Every screenshot was viewed and every number in the report cross-checked** against the recorded results.
 - **Data safety:** tests only changed appointments they created, then deleted them and verified the deletion. The two exceptions ran only with my approval and were verified to leave the data exactly as it was.
-- **Postman validation:** Codex ran the collection with Newman against a controlled API, exercised cleanup after a prerequisite failure, and ran it against the live challenge API. My exported Postman run matched the earlier Newman result. After reducing duplicate cases and assertions, the final collection was checked again. Exact counts and field-level evidence are recorded in `appointments.README.md`.
+- **Postman validation:** Codex ran the collection with Newman against a controlled API, exercised cleanup after a prerequisite failure, and ran it against the live challenge API. My exported Postman run matched the earlier Newman result. After reducing duplicate cases and assertions, the final collection was checked again. Exact counts and field-level evidence are recorded in [part-3-postman/README.md](part-3-postman/README.md).
 
 ## Mistakes it made that these checks caught
 

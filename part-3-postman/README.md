@@ -1,6 +1,6 @@
 # Postman: appointment rescheduling
 
-Import `appointments.json` and `appointments.environment.json` into Postman.
+Import `medappoint-reschedule.postman_collection.json` and `medappoint.postman_environment.json` into Postman.
 Select the imported environment and fill in these three values locally:
 
 | Variable | Value |
