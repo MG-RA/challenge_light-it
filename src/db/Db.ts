@@ -94,7 +94,11 @@ export class Db {
   }
 
   /** Like `one`, but a missing row fails with `description` instead of a later TypeError. */
-  async oneOrThrow<T extends QueryResultRow>(description: string, sql: string, params: unknown[] = []): Promise<T> {
+  async oneOrThrow<T extends QueryResultRow>(
+    description: string,
+    sql: string,
+    params: unknown[] = [],
+  ): Promise<T> {
     const row = await this.one<T>(sql, params);
     if (!row) throw new Error(`Expected a row in the DB: ${description}`);
     return row;
@@ -170,7 +174,10 @@ export class Db {
   }
 
   paymentsForAppointment(id: number) {
-    return this.query<PaymentRow>('select id, appointment_id, amount, method, status from payments where appointment_id = $1 order by id', [id]);
+    return this.query<PaymentRow>(
+      'select id, appointment_id, amount, method, status from payments where appointment_id = $1 order by id',
+      [id],
+    );
   }
 
   occupiedSlots(doctorId: number, start: string, end: string) {
@@ -190,12 +197,17 @@ export class Db {
   }
 
   inactiveDoctor() {
-    return this.one<{ id: number }>('select id from doctors where not is_active order by id limit 1');
+    return this.one<{ id: number }>(
+      'select id from doctors where not is_active order by id limit 1',
+    );
   }
 
   /** An id no doctor has, for not-found checks. */
   async unusedDoctorId(): Promise<number> {
-    const { id } = await this.oneOrThrow<{ id: number }>('next doctor id', 'select coalesce(max(id), 0)::int + 1 as id from doctors');
+    const { id } = await this.oneOrThrow<{ id: number }>(
+      'next doctor id',
+      'select coalesce(max(id), 0)::int + 1 as id from doctors',
+    );
     return id;
   }
 

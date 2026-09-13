@@ -1,8 +1,11 @@
 import { setTimeout } from 'node:timers/promises';
 
 /** Require a predicate to remain true across an observation window; this is not proof forever. */
-export async function observe<T>(read: () => Promise<T>, accepts: (value: T) => boolean,
-  options: { timeoutMs?: number; stableMs?: number; intervalMs?: number } = {}): Promise<T> {
+export async function observe<T>(
+  read: () => Promise<T>,
+  accepts: (value: T) => boolean,
+  options: { timeoutMs?: number; stableMs?: number; intervalMs?: number } = {},
+): Promise<T> {
   const { timeoutMs = 4_000, stableMs = 1_000, intervalMs = 200 } = options;
   const deadline = Date.now() + timeoutMs;
   let since: number | undefined;

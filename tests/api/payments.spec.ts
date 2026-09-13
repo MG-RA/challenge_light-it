@@ -2,7 +2,11 @@ import { expectCompleteJson } from '../../src/fixtures';
 import { expectStoredPayments } from './dbState';
 import { test, expect } from './writes';
 
-test('GET /payments matches payments for the patient appointments', async ({ api, db, testUser }) => {
+test('GET /payments matches payments for the patient appointments', async ({
+  api,
+  db,
+  testUser,
+}) => {
   const payments = await expectCompleteJson(await api.listPayments(), 200, 'Payment[]');
   const rows = await db.paymentsForPatient(testUser.id);
   expect(payments.map((p) => p.id).toSorted((a, b) => a - b)).toEqual(rows.map((p) => p.id));
@@ -18,7 +22,9 @@ test('GET /payments matches payments for the patient appointments', async ({ api
 
 // Payments cannot be removed through the API. Each test pays one dedicated owned appointment, the two
 // tests together use the four capped submissions, and teardown declares any residue.
-test('POST /payments stores one valid payment and rejects a duplicate', { tag: '@mutating' },
+test(
+  'POST /payments stores one valid payment and rejects a duplicate',
+  { tag: '@mutating' },
   async ({ owned, db }) => {
     const booked = await owned.book();
     const fee = Number(booked.doctor.consultation_fee);
@@ -27,26 +33,42 @@ test('POST /payments stores one valid payment and rejects a duplicate', { tag: '
     const valid = await owned.pay(booked.id, { amount: fee, method: 'cash' });
     expect(valid.status).toBe(200);
     expect(valid.before, 'a fresh appointment starts without payments').toEqual([]);
-    const [payment] = await expectStoredPayments(db, booked.id, [{ appointment_id: booked.id, method: 'cash' }]);
+    const [payment] = await expectStoredPayments(db, booked.id, [
+      { appointment_id: booked.id, method: 'cash' },
+    ]);
     expect(Number(payment!.amount)).toBe(fee);
     expect(['pending', 'paid', 'refunded']).toContain(payment!.status);
-    expect(valid.body, 'the response reports the stored payment').toMatchObject({ success: true, payment_id: payment!.id });
+    expect(valid.body, 'the response reports the stored payment').toMatchObject({
+      success: true,
+      payment_id: payment!.id,
+    });
 
     // A duplicate is only meaningful once a valid payment exists, so it stays in this test.
     const duplicate = await owned.pay(booked.id, { amount: fee, method: 'cash' });
-    expect.soft([400, 409], 'duplicate payment rejection is a proposed business expectation').toContain(duplicate.status);
+    expect
+      .soft([400, 409], 'duplicate payment rejection is a proposed business expectation')
+      .toContain(duplicate.status);
     await expectStoredPayments(db, booked.id, [payment!]);
-  });
+  },
+);
 
 // Independent of a successful payment, so F-18 cannot hide these checks.
-test('POST /payments rejects zero and negative amounts without storing a payment', { tag: '@mutating' },
+test(
+  'POST /payments rejects zero and negative amounts without storing a payment',
+  { tag: '@mutating' },
   async ({ owned, db }) => {
     const booked = await owned.book();
-    for (const [label, amount] of [['zero', 0], ['negative', -1]] as const) {
+    for (const [label, amount] of [
+      ['zero', 0],
+      ['negative', -1],
+    ] as const) {
       await test.step(`rejects a ${label} amount`, async () => {
         const result = await owned.pay(booked.id, { amount, method: 'cash' });
-        expect.soft([400, 409], `${label} payment rejection is a proposed business expectation`).toContain(result.status);
+        expect
+          .soft([400, 409], `${label} payment rejection is a proposed business expectation`)
+          .toContain(result.status);
         await expectStoredPayments(db, booked.id, []);
       });
     }
-  });
+  },
+);

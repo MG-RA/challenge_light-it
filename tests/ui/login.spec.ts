@@ -8,7 +8,12 @@ test.describe('Login page', () => {
     await loginPage.goto();
   });
 
-  test('valid credentials land on the dashboard', async ({ page, loginPage, dashboardPage, credentials }) => {
+  test('valid credentials land on the dashboard', async ({
+    page,
+    loginPage,
+    dashboardPage,
+    credentials,
+  }) => {
     await loginPage.login(credentials.email, credentials.password);
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(dashboardPage.greeting).toBeVisible();
@@ -38,8 +43,16 @@ for (const scenario of ['missing email', 'missing password', 'malformed email'] 
       await route.fulfill({ status: 400, json: { error: 'Unexpected submission' } });
     });
     await loginPage.goto();
-    await loginPage.emailInput.fill(scenario === 'missing email' ? '' : scenario === 'malformed email' ? 'invalid' : 'qa@example.com');
-    await loginPage.passwordInput.fill(scenario === 'missing password' ? '' : 'deliberately-invalid');
+    await loginPage.emailInput.fill(
+      scenario === 'missing email'
+        ? ''
+        : scenario === 'malformed email'
+          ? 'invalid'
+          : 'qa@example.com',
+    );
+    await loginPage.passwordInput.fill(
+      scenario === 'missing password' ? '' : 'deliberately-invalid',
+    );
     await loginPage.submitButton.click();
     const field = scenario === 'missing password' ? loginPage.passwordInput : loginPage.emailInput;
     await expect(field).toBeFocused();
@@ -50,9 +63,13 @@ for (const scenario of ['missing email', 'missing password', 'malformed email'] 
 }
 
 test('login shows actionable feedback for throttling', async ({ page, loginPage }) => {
-  await page.route('**/api/auth/login', (route) => route.fulfill({
-    status: 429, headers: { 'Retry-After': '60' }, json: { error: 'Too many requests. Try again in 60 seconds.' },
-  }));
+  await page.route('**/api/auth/login', (route) =>
+    route.fulfill({
+      status: 429,
+      headers: { 'Retry-After': '60' },
+      json: { error: 'Too many requests. Try again in 60 seconds.' },
+    }),
+  );
   await loginPage.goto();
   await loginPage.login('qa@example.com', 'deliberately-invalid');
   await expect(page.getByText(/too many|try again in|wait.*seconds/i)).toBeVisible();

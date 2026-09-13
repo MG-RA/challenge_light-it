@@ -27,7 +27,9 @@ export const expect = base.extend({
     if (errors.length > MAX_ERRORS) shown.push(`  … and ${errors.length - MAX_ERRORS} more`);
     const message = () =>
       `${this.utils.matcherHint('toMatchSchema', 'received', 'schema', { isNot: this.isNot })}\n\n` +
-      (pass ? `Expected value not to match ${ref}` : `Value does not match ${ref}:\n${shown.join('\n')}`);
+      (pass
+        ? `Expected value not to match ${ref}`
+        : `Value does not match ${ref}:\n${shown.join('\n')}`);
     return { name: 'toMatchSchema', pass, expected: ref, message };
   },
 });

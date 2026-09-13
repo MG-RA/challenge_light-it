@@ -15,11 +15,15 @@ export class Sidebar {
     this.newAppointmentLink = this.root
       .getByRole('link', { name: 'New Appointment' })
       .describe('Sidebar "New Appointment" link');
-    this.logoutButton = this.root.getByRole('button', { name: /logout/i }).describe('Logout button');
+    this.logoutButton = this.root
+      .getByRole('button', { name: /logout/i })
+      .describe('Logout button');
   }
 
   link(name: SidebarSection): Locator {
     // Accessible names include the icon ligature text (e.g. "medical_services Doctors").
-    return this.nav.getByRole('link', { name: new RegExp(`${name}$`) }).describe(`"${name}" nav link`);
+    return this.nav
+      .getByRole('link', { name: new RegExp(`${name}$`) })
+      .describe(`"${name}" nav link`);
   }
 }

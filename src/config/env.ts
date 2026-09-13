@@ -27,7 +27,9 @@ function timezone(name: string, fallback: string): string {
   try {
     new Intl.DateTimeFormat('en', { timeZone: value });
   } catch {
-    throw new Error(`Env var "${name}" must be an IANA time zone such as UTC or America/Montevideo, got "${value}"`);
+    throw new Error(
+      `Env var "${name}" must be an IANA time zone such as UTC or America/Montevideo, got "${value}"`,
+    );
   }
   return value;
 }

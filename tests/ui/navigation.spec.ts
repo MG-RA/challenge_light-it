@@ -10,8 +10,12 @@ test.describe('Sidebar destinations', () => {
       await dashboardPage.goto();
       await dashboardPage.sidebar.link(section).click();
       await expect(page).toHaveURL(new RegExp(`/${section.toLowerCase()}$`));
-      const destination = section === 'Doctors' ? new DoctorsPage(page)
-        : section === 'Appointments' ? new AppointmentsPage(page) : new NotificationsPage(page);
+      const destination =
+        section === 'Doctors'
+          ? new DoctorsPage(page)
+          : section === 'Appointments'
+            ? new AppointmentsPage(page)
+            : new NotificationsPage(page);
       await expect(destination.heading).toBeVisible();
     });
   }
@@ -26,7 +30,12 @@ test.describe('Sidebar destinations', () => {
   });
 });
 
-test('sidebar logout clears the session and protects routes after reload and back', async ({ page, dashboardPage, loginPage, credentials }) => {
+test('sidebar logout clears the session and protects routes after reload and back', async ({
+  page,
+  dashboardPage,
+  loginPage,
+  credentials,
+}) => {
   // Use a separate session so server-side revocation cannot invalidate shared setup.
   await page.context().clearCookies();
   await page.goto('/login');

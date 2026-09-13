@@ -31,6 +31,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
+      - run: npm run format:check
       - run: npx playwright install --with-deps chromium
 
       # Secrets are scoped to this step only, not to install scripts run by `npm ci`.

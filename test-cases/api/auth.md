@@ -2,7 +2,7 @@
 
 Spec: [tests/api/auth.spec.ts](../../tests/api/auth.spec.ts) · Project: `api` (depends on `setup`)
 
-Contains 1 login-rejection case, 16 auth-gate cases and 4 authorization-boundary cases. The gate cases come from the loops at [auth.spec.ts:11](../../tests/api/auth.spec.ts:11): 2 token modes × 8 protected GET operations.
+Contains 1 login-rejection case, 16 auth-gate cases and 4 authorization-boundary cases. The gate cases come from the loops at [auth.spec.ts:13](../../tests/api/auth.spec.ts:13): 2 token modes × 8 protected GET operations.
 
 ## Shared details for the auth-gate cases (TC-AUTH-002 … 017)
 
@@ -43,7 +43,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:14](../../tests/api/auth.spec.ts:14) › `Auth API › profile rejects a missing token` |
+| Automated test | [auth.spec.ts:22](../../tests/api/auth.spec.ts:22) › `Auth API › profile rejects a missing token` |
 | Project / tag | api / — |
 
 | # | Action | Expected result |
@@ -54,7 +54,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:14](../../tests/api/auth.spec.ts:14) › `Auth API › doctors rejects a missing token` |
+| Automated test | [auth.spec.ts:22](../../tests/api/auth.spec.ts:22) › `Auth API › doctors rejects a missing token` |
 | Project / tag | api / — |
 
 | # | Action | Expected result |
@@ -65,7 +65,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:14](../../tests/api/auth.spec.ts:14) › `Auth API › appointments rejects a missing token` |
+| Automated test | [auth.spec.ts:22](../../tests/api/auth.spec.ts:22) › `Auth API › appointments rejects a missing token` |
 | Project / tag | api / — |
 
 | # | Action | Expected result |
@@ -76,7 +76,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:14](../../tests/api/auth.spec.ts:14) › `Auth API › payments rejects a missing token` |
+| Automated test | [auth.spec.ts:22](../../tests/api/auth.spec.ts:22) › `Auth API › payments rejects a missing token` |
 | Project / tag | api / — |
 
 | # | Action | Expected result |
@@ -87,7 +87,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:14](../../tests/api/auth.spec.ts:14) › `Auth API › notifications rejects a missing token` |
+| Automated test | [auth.spec.ts:22](../../tests/api/auth.spec.ts:22) › `Auth API › notifications rejects a missing token` |
 | Project / tag | api / — |
 
 | # | Action | Expected result |
@@ -98,7 +98,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:28](../../tests/api/auth.spec.ts:28) › `Auth API › doctor detail rejects a missing token` |
+| Automated test | [auth.spec.ts:40](../../tests/api/auth.spec.ts:40) › `Auth API › doctor detail rejects a missing token` |
 | Project / tag | api / — |
 | Precondition | At least one active doctor exists (`db.activeDoctors()`). Otherwise the case is skipped. |
 
@@ -111,7 +111,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:28](../../tests/api/auth.spec.ts:28) › `Auth API › doctor availability rejects a missing token` |
+| Automated test | [auth.spec.ts:40](../../tests/api/auth.spec.ts:40) › `Auth API › doctor availability rejects a missing token` |
 | Project / tag | api / — |
 | Precondition | At least one active doctor exists. Otherwise the case is skipped. |
 
@@ -124,7 +124,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:28](../../tests/api/auth.spec.ts:28) › `Auth API › appointment detail rejects a missing token` |
+| Automated test | [auth.spec.ts:40](../../tests/api/auth.spec.ts:40) › `Auth API › appointment detail rejects a missing token` |
 | Project / tag | api / — |
 | Precondition | The test user owns at least one appointment (`db.appointmentsForPatient`). Otherwise the case is skipped. |
 
@@ -139,7 +139,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:14](../../tests/api/auth.spec.ts:14) › `Auth API › profile rejects a malformed token` |
+| Automated test | [auth.spec.ts:22](../../tests/api/auth.spec.ts:22) › `Auth API › profile rejects a malformed token` |
 | Project / tag | api / — |
 
 | # | Action | Expected result |
@@ -150,7 +150,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:14](../../tests/api/auth.spec.ts:14) › `Auth API › doctors rejects a malformed token` |
+| Automated test | [auth.spec.ts:22](../../tests/api/auth.spec.ts:22) › `Auth API › doctors rejects a malformed token` |
 | Project / tag | api / — |
 
 | # | Action | Expected result |
@@ -161,7 +161,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:14](../../tests/api/auth.spec.ts:14) › `Auth API › appointments rejects a malformed token` |
+| Automated test | [auth.spec.ts:22](../../tests/api/auth.spec.ts:22) › `Auth API › appointments rejects a malformed token` |
 | Project / tag | api / — |
 
 | # | Action | Expected result |
@@ -172,7 +172,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:14](../../tests/api/auth.spec.ts:14) › `Auth API › payments rejects a malformed token` |
+| Automated test | [auth.spec.ts:22](../../tests/api/auth.spec.ts:22) › `Auth API › payments rejects a malformed token` |
 | Project / tag | api / — |
 
 | # | Action | Expected result |
@@ -183,7 +183,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:14](../../tests/api/auth.spec.ts:14) › `Auth API › notifications rejects a malformed token` |
+| Automated test | [auth.spec.ts:22](../../tests/api/auth.spec.ts:22) › `Auth API › notifications rejects a malformed token` |
 | Project / tag | api / — |
 
 | # | Action | Expected result |
@@ -194,7 +194,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:28](../../tests/api/auth.spec.ts:28) › `Auth API › doctor detail rejects a malformed token` |
+| Automated test | [auth.spec.ts:40](../../tests/api/auth.spec.ts:40) › `Auth API › doctor detail rejects a malformed token` |
 | Project / tag | api / — |
 | Precondition | At least one active doctor exists. Otherwise the case is skipped. |
 
@@ -207,7 +207,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:28](../../tests/api/auth.spec.ts:28) › `Auth API › doctor availability rejects a malformed token` |
+| Automated test | [auth.spec.ts:40](../../tests/api/auth.spec.ts:40) › `Auth API › doctor availability rejects a malformed token` |
 | Project / tag | api / — |
 | Precondition | At least one active doctor exists. Otherwise the case is skipped. |
 
@@ -220,7 +220,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:28](../../tests/api/auth.spec.ts:28) › `Auth API › appointment detail rejects a malformed token` |
+| Automated test | [auth.spec.ts:40](../../tests/api/auth.spec.ts:40) › `Auth API › appointment detail rejects a malformed token` |
 | Project / tag | api / — |
 | Precondition | The test user owns at least one appointment. Otherwise the case is skipped. |
 
@@ -244,7 +244,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:46](../../tests/api/auth.spec.ts:46) › `Authorization boundaries › appointment detail refuses another patient's appointment` |
+| Automated test | [auth.spec.ts:66](../../tests/api/auth.spec.ts:66) › `Authorization boundaries › appointment detail refuses another patient's appointment` |
 | Project / tag | api / — |
 | Basis | C (403 is documented for this operation), P (no data in the refusal) |
 | Precondition | An appointment owned by a different patient exists. Otherwise the case is skipped. |
@@ -260,7 +260,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:56](../../tests/api/auth.spec.ts:56) › `Authorization boundaries › profile rejects a token whose user_id was altered` |
+| Automated test | [auth.spec.ts:82](../../tests/api/auth.spec.ts:82) › `Authorization boundaries › profile rejects a token whose user_id was altered` |
 | Project / tag | api / — |
 | Basis | C (401 is documented for this route) |
 | Precondition | Another patient exists. Otherwise the case is skipped. |
@@ -276,7 +276,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:67](../../tests/api/auth.spec.ts:67) › `Authorization boundaries › profile rejects a token with an alg:none header` |
+| Automated test | [auth.spec.ts:100](../../tests/api/auth.spec.ts:100) › `Authorization boundaries › profile rejects a token with an alg:none header` |
 | Project / tag | api / — |
 | Basis | C |
 | Last recorded | Pass (2026-09-13) |
@@ -290,7 +290,7 @@ Cases for routes with an ID (doctor detail, doctor availability, appointment det
 
 | Field | Value |
 |---|---|
-| Automated test | [auth.spec.ts:72](../../tests/api/auth.spec.ts:72) › `Authorization boundaries › profile answers an empty-signature token with the documented 401` |
+| Automated test | [auth.spec.ts:105](../../tests/api/auth.spec.ts:105) › `Authorization boundaries › profile answers an empty-signature token with the documented 401` |
 | Project / tag | api / — |
 | Basis | C |
 | Finding | [F-20](../../docs/FINDINGS.md) |

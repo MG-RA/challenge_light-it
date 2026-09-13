@@ -85,6 +85,7 @@ npm run test:ui
 npm run test:list       # list tests without running them
 npm run typecheck
 npm run lint
+npm run format          # Prettier; CI runs format:check
 npm run report          # open the last HTML report
 ```
 
@@ -124,6 +125,6 @@ QA_PLAN.md           scope, risks, approach and roadmap
 
 ## Reports and CI
 
-HTML reports go to `playwright-report/`; JSON and JUnit results go to `test-results/`. GitHub Actions ([workflow](.github/workflows/playwright.yml)) runs type checking, lint and the default suite, on pushes to `main`, same-repository pull requests and manual dispatch. It needs repository secrets `APP_USER_EMAIL`, `APP_USER_PASSWORD`, `DB_HOST`, `DB_USER` and `DB_PASSWORD`. The first hosted runs passed on 2026-09-13, for [pull request #1](https://github.com/MG-RA/challenge_light-it/actions/runs/34776433354) and for the [merge to `main`](https://github.com/MG-RA/challenge_light-it/actions/runs/34776679694): 69 tests, 59 passed, 9 expected failures, 1 skipped, no retries (two DB connectivity checks have since been retired). Their logs and artifacts were checked and contain no credentials, tokens, traces or screenshots. Opt-in write and rate-limit results come from local runs; see the [run record](test-cases/README.md#run-record).
+HTML reports go to `playwright-report/`; JSON and JUnit results go to `test-results/`. GitHub Actions ([workflow](.github/workflows/playwright.yml)) runs type checking, lint, a Prettier format check and the default suite, on pushes to `main`, same-repository pull requests and manual dispatch. It needs repository secrets `APP_USER_EMAIL`, `APP_USER_PASSWORD`, `DB_HOST`, `DB_USER` and `DB_PASSWORD`. The first hosted runs passed on 2026-09-13, for [pull request #1](https://github.com/MG-RA/challenge_light-it/actions/runs/34776433354) and for the [merge to `main`](https://github.com/MG-RA/challenge_light-it/actions/runs/34776679694): 69 tests, 59 passed, 9 expected failures, 1 skipped, no retries (two DB connectivity checks have since been retired). Their logs and artifacts were checked and contain no credentials, tokens, traces or screenshots. Opt-in write and rate-limit results come from local runs; see the [run record](test-cases/README.md#run-record).
 
 Status diagnostics redact response bodies. In CI no traces, screenshots or videos are recorded, because traces carry the session token and artifacts of a public repository are downloadable; CI artifacts hold only reports and assertion messages. Local runs keep all three for failures and can contain account data, so review them before sharing; `.env`, `.auth/` and raw reports are git-ignored.

@@ -23,7 +23,11 @@ export class ApiClient {
     return new ApiClient(this.request, token);
   }
 
-  private send(method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, data?: unknown): Promise<APIResponse> {
+  private send(
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+    url: string,
+    data?: unknown,
+  ): Promise<APIResponse> {
     const headers = this.token ? { Authorization: `Bearer ${this.token}` } : undefined;
     return this.request.fetch(url, { method, headers, data });
   }
@@ -76,7 +80,10 @@ export class ApiClient {
     return this.send('PUT', `/api/appointments/${id}/cancel`);
   }
 
-  rescheduleAppointment(id: number | string, body: RescheduleAppointmentRequest): Promise<APIResponse> {
+  rescheduleAppointment(
+    id: number | string,
+    body: RescheduleAppointmentRequest,
+  ): Promise<APIResponse> {
     return this.send('PUT', `/api/appointments/${id}/reschedule`, body);
   }
 

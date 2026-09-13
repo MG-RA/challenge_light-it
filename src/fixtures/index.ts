@@ -80,9 +80,11 @@ export const test = base.extend<TestOptions & TestFixtures, WorkerFixtures>({
     { scope: 'worker' },
   ],
 
-  anonApi: ({ playwright, apiBaseURL }, use) => provideApiClient(playwright, apiBaseURL, undefined, use),
+  anonApi: ({ playwright, apiBaseURL }, use) =>
+    provideApiClient(playwright, apiBaseURL, undefined, use),
 
-  api: ({ playwright, apiBaseURL, token }, use) => provideApiClient(playwright, apiBaseURL, token, use),
+  api: ({ playwright, apiBaseURL, token }, use) =>
+    provideApiClient(playwright, apiBaseURL, token, use),
 
   loginPage: async ({ page }, use) => {
     await use(new LoginPage(page));

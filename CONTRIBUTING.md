@@ -3,7 +3,7 @@
 The suite tests a **shared remote** deployment: web app, API and Supabase Postgres. Nothing runs
 locally, the DB account is read-only, and writes touch live data. Most rules below follow from that.
 
-Before pushing: `npm run typecheck && npm run lint && npm test`.
+Before pushing: `npm run format && npm run typecheck && npm run lint && npm test`. CI fails on unformatted code (`npm run format:check`).
 
 ## Where code belongs
 

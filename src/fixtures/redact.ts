@@ -6,9 +6,15 @@ const SAFE_SCALARS = new Set(['status', 'statuscode', 'code', 'success']);
 function sanitize(value: unknown, key = ''): unknown {
   if (Array.isArray(value)) return value.map((item) => sanitize(item));
   if (value !== null && typeof value === 'object') {
-    return Object.fromEntries(Object.entries(value).map(([field, item]) => [field, sanitize(item, field)]));
+    return Object.fromEntries(
+      Object.entries(value).map(([field, item]) => [field, sanitize(item, field)]),
+    );
   }
-  if (SAFE_SCALARS.has(key.toLowerCase()) && (typeof value === 'number' || typeof value === 'boolean')) return value;
+  if (
+    SAFE_SCALARS.has(key.toLowerCase()) &&
+    (typeof value === 'number' || typeof value === 'boolean')
+  )
+    return value;
   return REDACTED;
 }
 
@@ -20,7 +26,9 @@ export function redactedBody(body: string): string {
   } catch {
     return '[non-JSON body omitted]';
   }
-  return result.length > MAX_BODY_CHARS ? `${result.slice(0, MAX_BODY_CHARS)}… (truncated)` : result;
+  return result.length > MAX_BODY_CHARS
+    ? `${result.slice(0, MAX_BODY_CHARS)}… (truncated)`
+    : result;
 }
 
 export function diagnosticUrl(raw: string): string {

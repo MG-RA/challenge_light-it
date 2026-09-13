@@ -10,20 +10,31 @@ test.describe('Doctors API', () => {
     expect(doctors.map((d) => d.id!).toSorted((a, b) => a - b)).toEqual(dbActive.map((d) => d.id));
     for (const row of dbActive) {
       expect(doctors.find((d) => d.id === row.id)).toMatchObject({
-        id: row.id, first_name: row.first_name, last_name: row.last_name,
-        specialty: row.specialty, bio: row.bio, avatar_url: row.avatar_url,
+        id: row.id,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        specialty: row.specialty,
+        bio: row.bio,
+        avatar_url: row.avatar_url,
       });
     }
   });
 
-  test('GET /doctors satisfies the field-completeness policy',
-    { annotation: { type: 'issue', description: 'F-01: list omits fee and active fields; completeness policy, not raw OpenAPI' } },
+  test(
+    'GET /doctors satisfies the field-completeness policy',
+    {
+      annotation: {
+        type: 'issue',
+        description: 'F-01: list omits fee and active fields; completeness policy, not raw OpenAPI',
+      },
+    },
     async ({ api }) => {
       const { doctors, gaps } = await doctorCompletenessGaps(await api.listDoctors());
       test.skip(doctors.length === 0, 'No doctors available to assess item completeness');
       test.fail(true, 'F-01: only missing is_active/consultation_fee may fail');
       expect(gaps).toEqual([]);
-    });
+    },
+  );
 
   test('GET /doctors/:id matches the stored doctor', async ({ api, db }) => {
     const [row] = await db.activeDoctors();

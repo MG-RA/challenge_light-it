@@ -17,15 +17,17 @@ export default defineConfig<TestOptions>({
   grepInvert: mutating ? undefined : /@mutating/,
   retries: mutating || !process.env.CI ? 0 : 1,
   // Shared remote env + rate-limited login: keep concurrency modest.
-  workers: mutating ? 1 : (process.env.CI ? 2 : 4),
-  reporter: listing ? [['list']] : [
-    ['list'],
-    ['html', { open: 'never' }],
-    ['json', { outputFile: 'test-results/results.json' }],
-    ...(process.env.CI
-      ? ([['junit', { outputFile: 'test-results/junit.xml' }], ['github']] as const)
-      : []),
-  ],
+  workers: mutating ? 1 : process.env.CI ? 2 : 4,
+  reporter: listing
+    ? [['list']]
+    : [
+        ['list'],
+        ['html', { open: 'never' }],
+        ['json', { outputFile: 'test-results/results.json' }],
+        ...(process.env.CI
+          ? ([['junit', { outputFile: 'test-results/junit.xml' }], ['github']] as const)
+          : []),
+      ],
   timeout: mutating ? 90_000 : 30_000,
   expect: { timeout: 7_000 },
 

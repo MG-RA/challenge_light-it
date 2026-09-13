@@ -34,7 +34,7 @@ Spec: [tests/api/payments.spec.ts](../../tests/api/payments.spec.ts) · Project:
 
 | Field | Value |
 |---|---|
-| Automated test | [payments.spec.ts:21](../../tests/api/payments.spec.ts:21) › `POST /payments stores one valid payment and rejects a duplicate` |
+| Automated test | [payments.spec.ts:25](../../tests/api/payments.spec.ts:25) › `POST /payments stores one valid payment and rejects a duplicate` |
 | Project / tag | api / **@mutating** |
 | Type | Functional, business rules, state verification |
 | Priority / basis | P0 / C (200 with `success`/`payment_id`), P (one persisted payment, returned ID equals the stored ID), Q (duplicate rejected with 400 or 409) |
@@ -65,7 +65,7 @@ Spec: [tests/api/payments.spec.ts](../../tests/api/payments.spec.ts) · Project:
 
 | Field | Value |
 |---|---|
-| Automated test | [payments.spec.ts:42](../../tests/api/payments.spec.ts:42) › `POST /payments rejects zero and negative amounts without storing a payment` |
+| Automated test | [payments.spec.ts:56](../../tests/api/payments.spec.ts:56) › `POST /payments rejects zero and negative amounts without storing a payment` |
 | Project / tag | api / **@mutating** |
 | Type | Business rules, state verification |
 | Priority / basis | P0 / P (nothing stored after an invalid amount), Q (rejected with 400 or 409: the request schema only requires a number, and the documented 400 is for an invalid method) |

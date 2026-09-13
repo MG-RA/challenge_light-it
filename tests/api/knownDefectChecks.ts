@@ -8,8 +8,10 @@ import { readAppointments } from './appointmentResponse';
 export async function doctorCompletenessGaps(response: APIResponse) {
   const doctors = await expectJson(response, 200, 'Doctor[]');
   const gaps = missingFields('Doctor[]', doctors);
-  expect(gaps.filter(({ field }) => !['is_active', 'consultation_fee'].includes(field)),
-    'unrelated missing doctor fields').toEqual([]);
+  expect(
+    gaps.filter(({ field }) => !['is_active', 'consultation_fee'].includes(field)),
+    'unrelated missing doctor fields',
+  ).toEqual([]);
   return { doctors, gaps };
 }
 
@@ -17,7 +19,10 @@ export async function doctorCompletenessGaps(response: APIResponse) {
 export function expectUnsignedTokenDenied(response: APIResponse) {
   if (response.status() === 401) return;
   expect(response.status(), 'unsigned token must be refused').toBe(403);
-  expect(response.headers()['x-vercel-mitigated'], 'known F-20 signature: denied at the edge, not by the API').toBe('deny');
+  expect(
+    response.headers()['x-vercel-mitigated'],
+    'known F-20 signature: denied at the edge, not by the API',
+  ).toBe('deny');
 }
 
 export async function cacheHeaderForCheck(response: APIResponse, schema: 'User' | 'Appointment[]') {
@@ -27,7 +32,9 @@ export async function cacheHeaderForCheck(response: APIResponse, schema: 'User' 
   if (/\bpublic\b/i.test(header)) {
     expect(header, 'known F-14 header signature').toBe('public, max-age=0, must-revalidate');
   } else {
-    expect(header, 'a different unsafe cache policy is not F-14').toMatch(/\b(private|no-store)\b/i);
+    expect(header, 'a different unsafe cache policy is not F-14').toMatch(
+      /\b(private|no-store)\b/i,
+    );
   }
   return header;
 }

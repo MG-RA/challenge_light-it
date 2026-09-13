@@ -12,7 +12,7 @@ export async function readAppointments(response: APIResponse, kind: 'list' | 'de
   await expect(response).toHaveStatus(200);
   const raw: unknown = await response.json();
   if (kind === 'list') expect(Array.isArray(raw), 'appointment list is an array').toBe(true);
-  const records: unknown[] = kind === 'list' ? raw as unknown[] : [raw];
+  const records: unknown[] = kind === 'list' ? (raw as unknown[]) : [raw];
   const dateFormatViolations: { index: number; date: string }[] = [];
   const normalized = records.map((record, index) => {
     if (record === null || typeof record !== 'object' || Array.isArray(record)) return record;
@@ -26,6 +26,9 @@ export async function readAppointments(response: APIResponse, kind: 'list' | 'de
   });
   // All other fields, missing properties and calendar validity still fail normally.
   expect(normalized).toMatchSchema('Appointment[]');
-  expect(missingFields('Appointment[]', normalized), 'Appointment field-completeness policy').toEqual([]);
+  expect(
+    missingFields('Appointment[]', normalized),
+    'Appointment field-completeness policy',
+  ).toEqual([]);
   return { appointments: normalized as Appointment[], dateFormatViolations };
 }

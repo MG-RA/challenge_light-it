@@ -16,14 +16,18 @@ export function saveSession(token: string): void {
     AUTH_STATE_FILE,
     JSON.stringify({
       cookies: [],
-      origins: [{ origin: new URL(env.baseUrl).origin, localStorage: [{ name: 'token', value: token }] }],
+      origins: [
+        { origin: new URL(env.baseUrl).origin, localStorage: [{ name: 'token', value: token }] },
+      ],
     }),
   );
 }
 
 export function loadToken(): string {
   if (!fs.existsSync(TOKEN_FILE)) {
-    throw new Error(`No auth token at ${TOKEN_FILE}. Run the "setup" project first (don't pass --no-deps).`);
+    throw new Error(
+      `No auth token at ${TOKEN_FILE}. Run the "setup" project first (don't pass --no-deps).`,
+    );
   }
   return (JSON.parse(fs.readFileSync(TOKEN_FILE, 'utf8')) as { token: string }).token;
 }

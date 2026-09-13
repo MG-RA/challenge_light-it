@@ -10,7 +10,9 @@ export class LoginPage {
     this.emailInput = page.locator('#email').describe('Email input');
     this.passwordInput = page.locator('#password').describe('Password input');
     this.submitButton = page.getByRole('button', { name: 'Sign In' }).describe('Sign In button');
-    this.errorMessage = page.getByText('Invalid email or password', { exact: false }).describe('Login rejection feedback');
+    this.errorMessage = page
+      .getByText('Invalid email or password', { exact: false })
+      .describe('Login rejection feedback');
   }
 
   async goto(): Promise<void> {
@@ -25,8 +27,10 @@ export class LoginPage {
 
   async loginAndWaitForResponse(email: string, password: string) {
     const [response] = await Promise.all([
-      this.page.waitForResponse((res) =>
-        new URL(res.url()).pathname === '/api/auth/login' && res.request().method() === 'POST'),
+      this.page.waitForResponse(
+        (res) =>
+          new URL(res.url()).pathname === '/api/auth/login' && res.request().method() === 'POST',
+      ),
       this.login(email, password),
     ]);
     return response;

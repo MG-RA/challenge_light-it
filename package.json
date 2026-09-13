@@ -19,7 +19,9 @@
     "report": "playwright show-report",
     "codegen": "playwright codegen https://light-it-qa-challenge.vercel.app/login",
     "typecheck": "tsc",
-    "lint": "oxlint"
+    "lint": "oxlint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
@@ -31,6 +33,7 @@
     "oxlint": "^1.82.0",
     "oxlint-tsgolint": "^7.0.2001",
     "pg": "^8.23.0",
+    "prettier": "^3.9.6",
     "typescript": "^7.0.2"
   }
 }

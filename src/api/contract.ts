@@ -56,8 +56,10 @@ function validatorFor(ref: SchemaRef): ValidateFunction {
 
 function formatError(e: ErrorObject): string {
   const where = e.instancePath || '(root)';
-  if (e.keyword === 'additionalProperties') return `${where} has unexpected property '${e.params.additionalProperty}'`;
-  if (e.keyword === 'enum') return `${where} must be one of ${JSON.stringify(e.params.allowedValues)}`;
+  if (e.keyword === 'additionalProperties')
+    return `${where} has unexpected property '${e.params.additionalProperty}'`;
+  if (e.keyword === 'enum')
+    return `${where} must be one of ${JSON.stringify(e.params.allowedValues)}`;
   return `${where} ${e.message}`;
 }
 
@@ -73,7 +75,9 @@ export function missingFields(ref: SchemaRef, data: unknown): { index: number; f
   const records: unknown[] = ref.endsWith('[]') && Array.isArray(data) ? data : [data];
   return records.flatMap((record, index) =>
     Object.keys(spec.components.schemas[name].properties)
-      .filter((field) => record === null || typeof record !== 'object' || !Object.hasOwn(record, field))
+      .filter(
+        (field) => record === null || typeof record !== 'object' || !Object.hasOwn(record, field),
+      )
       .map((field) => ({ index, field })),
   );
 }
