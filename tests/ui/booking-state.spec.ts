@@ -9,7 +9,7 @@ test('booked doctor date and slot cannot be selected again', { tag: '@mutating' 
   const response = page.waitForResponse((res) => new URL(res.url()).pathname === `/api/doctors/${booked.row.doctor_id}/availability`);
   await booking.doctor.selectOption(String(booked.row.doctor_id));
   expect((await response).status()).toBe(200);
-  const option = page.locator('#time_slot option').filter({ hasText: new RegExp(`^${booked.row.time_slot}$`) });
+  const option = booking.slot(booked.row.time_slot);
   await expect(async () => {
     expect(await option.count() === 0 || await option.isDisabled(), 'occupied slot is absent or disabled').toBe(true);
   }).toPass({ timeout: 7000 });

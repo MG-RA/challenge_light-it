@@ -5,8 +5,8 @@ Playwright and TypeScript test suite for MedAppoint, covering the web UI, the RE
 ## At a glance
 
 - **Verdict: not release-ready.** Two P0 blockers: a payment reports success but is never stored (F-18), and a cancellation reports success but the appointment stays active (F-16). Both were reproduced twice against the database.
-- **15 confirmed bugs** — 2 P0, 4 P1, 7 P2, 2 P3 — plus one historical report awaiting re-verification. Next most urgent: double booking of the same slot (F-03), invalid dates and times accepted and stored (F-02, F-12, F-17).
-- **85 automated tests.** The 70 in the default suite pass in CI mode (verified locally with `CI=1`); 9 of them track 7 known bugs as expected failures, so any red run means something changed. 15 opt-in tests write owned, marked data to the shared environment and reproduce the write-path bugs; cleanup is verified in the DB.
+- **16 confirmed bugs** — 2 P0, 4 P1, 8 P2, 2 P3 — plus one historical report awaiting re-verification. Next most urgent: double booking of the same slot (F-03), invalid dates and times accepted and stored (F-02, F-12, F-17).
+- **85 automated tests.** The 69 in the default suite pass in CI mode (verified locally with `CI=1`); 9 of them track 7 known bugs as expected failures, so any red run means something changed. 16 opt-in tests write owned, marked data to the shared environment and reproduce the write-path bugs; cleanup is verified in the DB.
 - **Run it:** `npm ci`, `npx playwright install chromium`, fill `.env` from `.env.example`, then `npm test`.
 
 ## Start here
@@ -16,18 +16,19 @@ Playwright and TypeScript test suite for MedAppoint, covering the web UI, the RE
 | [Findings](docs/FINDINGS.md) | Prioritized bug list: reproduction steps, expected vs. actual, impact and evidence for each finding |
 | [Test cases](test-cases/README.md) | One written case per automated test: steps, expected results, related finding and latest result |
 | [QA plan](QA_PLAN.md) | Scope, risks, assertion policies, execution model, coverage gaps and roadmap |
+| [Contributing](CONTRIBUTING.md) | Where code belongs, assertion and known-defect conventions, safe remote writes, time zones |
 
 ## Current state
 
-**Automation:** 85 Playwright tests in 16 files. The default run executes 70; the other 15 write owned data to the shared environment and run only when explicitly enabled.
+**Automation:** 85 Playwright tests in 16 files. The default run executes 69; the other 16 write owned data to the shared environment and run only when explicitly enabled.
 
-**Latest results:** one full run of every suite on 2026-09-13 (default, API writes, UI writes, then the rate-limit check), with the default suite rerun in CI mode after its known defects were marked:
+**Latest results:** one full run of every suite on 2026-09-13 (default, API writes, UI writes, then the rate-limit check), with the default suite and the payment writes rerun after later changes on the same day:
 
 | Result | Cases |
 |---|---:|
-| Passed | 64 |
+| Passed | 63 |
 | Expected failures (known defects marked `test.fail`) | 9 |
-| Failed, each reproducing a finding (opt-in write and rate-limit runs only) | 11 |
+| Failed, each reproducing a finding (opt-in write and rate-limit runs only) | 12 |
 | Skipped (no attributable notification) | 1 |
 
 **The default suite is green:** every defect it reproduces is an expected failure, so a red CI run always means something new — a regression, a changed defect signature, or a fix to confirm. Every failure reproduces a documented finding; there were no new failures, no unexpected passes, no retries and no suite errors. Write cleanup was verified: no marked rows remained and no payment residue was created. Per-run tallies and durations are in the [run record](test-cases/README.md#run-record); per-case results are in the [test-case matrix](test-cases/README.md#traceability-matrix).
@@ -47,6 +48,7 @@ Playwright and TypeScript test suite for MedAppoint, covering the web UI, the RE
 | P2 | F-23 | Upcoming appointments counter does not update |
 | P2 | F-22 | No login throttling within ten failed attempts |
 | P2 | F-04 | Booking accepts an inactive doctor |
+| P2 | F-24 | Payments accept zero and negative amounts with HTTP 200 |
 | P2 | F-15 | Appointment dates are timestamps, not the declared date-only format |
 | P2 | F-01 | Doctor list omits fee and active status |
 | P3 | F-14 | Patient-specific responses use public cache directives |
@@ -110,6 +112,7 @@ src/config/          environment validation and write opt-in
 src/db/              parameterized DB lookups and bounded state observation
 src/fixtures/        test fixtures, custom matchers, redacted diagnostics
 src/pages/           page objects and the shared sidebar component
+src/support/         calendar math in the suite time zone
 tests/api/           API read cases, opt-in writes, ownership and cleanup helpers
 tests/ui/            login, dashboard, navigation and booking
 tests/db/            connectivity and read-only permission checks

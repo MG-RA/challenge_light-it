@@ -1,6 +1,7 @@
 import { test, expect } from '../../src/fixtures';
 import { DoctorsPage } from '../../src/pages/DoctorsPage';
 import { AppointmentsPage } from '../../src/pages/AppointmentsPage';
+import { BookingPage } from '../../src/pages/BookingPage';
 import { NotificationsPage } from '../../src/pages/NotificationsPage';
 
 test.describe('Sidebar destinations', () => {
@@ -48,5 +49,5 @@ test('sidebar New Appointment opens booking form', async ({ page, dashboardPage 
   await dashboardPage.goto();
   await dashboardPage.sidebar.newAppointmentLink.click();
   await expect(page).toHaveURL(/\/appointments\/new$/);
-  await expect(page.getByTestId('submit-appointment')).toBeVisible();
+  await expect(new BookingPage(page).submit).toBeVisible();
 });

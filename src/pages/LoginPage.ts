@@ -1,14 +1,12 @@
 import type { Locator, Page } from '@playwright/test';
 
 export class LoginPage {
-  readonly heading: Locator;
   readonly emailInput: Locator;
   readonly passwordInput: Locator;
   readonly submitButton: Locator;
   readonly errorMessage: Locator;
 
   constructor(private readonly page: Page) {
-    this.heading = page.getByRole('heading', { name: 'MedAppoint' }).describe('Login heading');
     this.emailInput = page.locator('#email').describe('Email input');
     this.passwordInput = page.locator('#password').describe('Password input');
     this.submitButton = page.getByRole('button', { name: 'Sign In' }).describe('Sign In button');

@@ -15,16 +15,16 @@ The folder mirrors `tests/`:
 | [api/caching.md](api/caching.md) | [tests/api/caching.spec.ts](../tests/api/caching.spec.ts) | 2 | default |
 | [api/doctors.md](api/doctors.md) | [tests/api/doctors.spec.ts](../tests/api/doctors.spec.ts) | 5 | default |
 | [api/appointments.md](api/appointments.md) | [tests/api/appointments.spec.ts](../tests/api/appointments.spec.ts) | 13 | 2 default, 11 `@mutating` |
-| [api/payments.md](api/payments.md) | [tests/api/payments.spec.ts](../tests/api/payments.spec.ts) | 2 | 1 default, 1 `@mutating` |
+| [api/payments.md](api/payments.md) | [tests/api/payments.spec.ts](../tests/api/payments.spec.ts) | 3 | 1 default, 2 `@mutating` |
 | [api/notifications.md](api/notifications.md) | [tests/api/notifications.spec.ts](../tests/api/notifications.spec.ts) | 2 | 1 default, 1 `@mutating` |
 | [api/rate-limit.md](api/rate-limit.md) | [tests/api/rate-limit.spec.ts](../tests/api/rate-limit.spec.ts) | 1 | default, skipped unless `RUN_RATE_LIMIT=1` |
 | [ui/login.md](ui/login.md) | [tests/ui/login.spec.ts](../tests/ui/login.spec.ts) | 7 | default |
-| [ui/dashboard.md](ui/dashboard.md) | [tests/ui/dashboard.spec.ts](../tests/ui/dashboard.spec.ts) | 13 | default |
+| [ui/dashboard.md](ui/dashboard.md) | [tests/ui/dashboard.spec.ts](../tests/ui/dashboard.spec.ts) | 12 | default |
 | [ui/dashboard.md](ui/dashboard.md) | [tests/ui/dashboard-state.spec.ts](../tests/ui/dashboard-state.spec.ts) | 1 | `@mutating` |
 | [ui/navigation.md](ui/navigation.md) | [tests/ui/navigation.spec.ts](../tests/ui/navigation.spec.ts) | 6 | default |
 | [ui/booking.md](ui/booking.md) | [tests/ui/booking.spec.ts](../tests/ui/booking.spec.ts) | 7 | default |
 | [ui/booking.md](ui/booking.md) | [tests/ui/booking-state.spec.ts](../tests/ui/booking-state.spec.ts) | 1 | `@mutating` |
-| **Total** | | **85** | **70 default, 15 `@mutating`** |
+| **Total** | | **85** | **69 default, 16 `@mutating`** |
 
 Helpers such as `tests/api/writes.ts`, `dbState.ts`, `appointmentResponse.ts` and `knownDefectChecks.ts` contain no tests. Their checks are written into the steps of the cases that use them.
 
@@ -32,7 +32,7 @@ Helpers such as `tests/api/writes.ts`, `dbState.ts`, `appointmentResponse.ts` an
 
 Every case has:
 
-- **ID:** `TC-<AREA>-<NNN>`. IDs are stable: append new ones, never renumber or reuse. Retired: TC-APT-003/004 (folded into TC-APT-001/002) and TC-UI-DASH-002/003 (covered by navigation; image size kept as F-13 feedback).
+- **ID:** `TC-<AREA>-<NNN>`. IDs are stable: append new ones, never renumber or reuse. Retired: TC-APT-003/004 (folded into TC-APT-001/002), TC-UI-DASH-002/003 (covered by navigation; image size kept as F-13 feedback) and TC-UI-DASH-008 (its pass against a DB snapshot was a coincidence of a static counter, F-23).
 - **Automated test:** spec file and line, plus the exact Playwright title so `--grep` finds it.
 - **Project / tag:** Playwright project (`setup`, `api`, `db`, `ui`), plus `@mutating` when the test writes remote data.
 - **Priority / basis:** **P0** patient isolation and booking/payment integrity, **P1** core behavior and contract, **P2** secondary behavior. A case's priority is how important its coverage is; a finding's priority in [FINDINGS.md](../docs/FINDINGS.md) is fix order. P0 lines up in both: P0 cases guard the risks whose defects are P0 release blockers. **C** means the OpenAPI contract specifies it, **P** is suite policy (DB reconciliation, field completeness), **Q** is a proposed business rule not in the spec; Q expectations are soft assertions.
@@ -64,12 +64,12 @@ Latest recorded result per case, all from 2026-09-13 as described in the [run re
 
 | Result | Cases |
 |---|---:|
-| Pass | 64 |
+| Pass | 63 |
 | Expected failure | 9 (F-01, F-12 UI, F-14 ×2, F-15 ×2, F-20, F-21, F-23 controlled) |
-| Fail | 11 (F-02, F-03, F-04, F-05, F-12 ×2, F-16, F-17, F-18, F-22, F-23 persisted) |
+| Fail | 12 (F-02, F-03, F-04, F-05, F-12 ×2, F-16, F-17, F-18, F-22, F-23 persisted, F-24) |
 | Skipped | 1 (TC-NOT-002: no attributable notification) |
 
-The default suite (what CI runs) has no ordinary failures: every open finding it reproduces is an expected failure. All 11 ordinary failures come from the opt-in write and rate-limit runs. Every failure reproduces a finding; none is a suite error. The failure count is not the bug count, because some findings fail more than one case.
+The default suite (what CI runs) has no ordinary failures: every open finding it reproduces is an expected failure. All 12 ordinary failures come from the opt-in write and rate-limit runs. Every failure reproduces a finding; none is a suite error. The failure count is not the bug count, because some findings fail more than one case.
 
 ## Run record
 
@@ -82,8 +82,10 @@ The default suite (what CI runs) has no ordinary failures: every open finding it
 | 3 | UI writes | `RUN_MUTATING=1 npx playwright test tests/ui/booking-state.spec.ts tests/ui/dashboard-state.spec.ts --project=ui --workers=1` | 33 s | setup passed, 2 failed (F-05, F-23) |
 | 4 | Rate limit | `RUN_RATE_LIMIT=1 npx playwright test tests/api/rate-limit.spec.ts --project=api --no-deps --workers=1` | 4 s | 1 failed (F-22: ten 401s, no 429) |
 | 5 | Default, CI mode, after marking the default-suite defects | `CI=1 npx playwright test` | 45 s | 60 passed, 9 expected failures, 0 failed, 1 skipped; exit code 0 |
+| 6 | Default, after the suite time zone, page-object locators and retiring TC-UI-DASH-008 | `npx playwright test` | 32 s | 59 passed, 9 expected failures, 0 failed, 1 skipped; exit code 0 |
+| 7 | Payment writes, after splitting TC-PAY-002 and adding TC-PAY-003 | `RUN_MUTATING=1 npx playwright test tests/api/payments.spec.ts --project=api --grep @mutating` | 24 s | setup passed, 2 failed (F-18, F-24) |
 
-Run 5 replaces run 1 for the default suite. Its only change was moving the five ordinary failures from run 1 (F-12 UI, F-15 ×2, F-21, F-23) behind scoped expected-failure markers, and each still failed with the signature recorded in run 1. Each case is counted once (the setup case in run 5), which gives the 85-case summary above. There were no retries, no flaky results and no unexpected passes; every expected failure matched its recorded signature on inspection. After runs 2 and 3, a DB query for `notes like 'qa-suite %'` returned no rows, and no payment residue was created because the valid payment did not persist (F-18). Raw HTML/JSON reports stay local because traces and screenshots are not redacted.
+Run 5 replaced run 1 for the default suite: its only change was moving the five ordinary failures from run 1 (F-12 UI, F-15 ×2, F-21, F-23) behind scoped expected-failure markers, and each still failed with the signature recorded in run 1. Run 6 is now the latest default run; every expected failure kept its signature. Run 7 replaces the payment case from run 2. Each case is counted once (the setup case in run 6), which gives the 85-case summary above. There were no retries, no flaky results and no unexpected passes; every expected failure matched its recorded signature on inspection. After runs 2, 3 and 7, a DB query for `notes like 'qa-suite %'` returned no rows, and no payment residue was created because the valid payment did not persist (F-18). Raw HTML/JSON reports stay local because traces and screenshots are not redacted.
 
 ## Traceability matrix
 
@@ -136,7 +138,8 @@ Run 5 replaces run 1 for the default suite. Its only change was moving the five 
 | TC-APT-014 | Appointments API writes › POST /appointments rejects a duplicate slot and leaves exactly one booking | api `@mutating` | F-03 | Fail |
 | TC-APT-015 | Appointments API writes › PUT /appointments/:id/reschedule rejects an invalid body and stores no change | api `@mutating` | F-17 | Fail |
 | TC-PAY-001 | GET /payments matches payments for the patient appointments | api | F-09 | Pass |
-| TC-PAY-002 | POST /payments stores one valid payment and rejects invalid amounts | api `@mutating` | F-18 | Fail (first step; later steps not reached) |
+| TC-PAY-002 | POST /payments stores one valid payment and rejects a duplicate | api `@mutating` | F-18 | Fail (duplicate step not reached) |
+| TC-PAY-003 | POST /payments rejects zero and negative amounts without storing a payment | api `@mutating` | F-24 | Fail |
 | TC-NOT-001 | GET /notifications contains only the user records and maps isRead to is_read | api | F-10 | Pass |
 | TC-NOT-002 | PUT /notifications/:id/read changes only that read flag and repeats idempotently | api `@mutating` | — | Skipped |
 | TC-UI-LOGIN-001 | Login page › valid credentials land on the dashboard | ui | — | Pass |
@@ -151,7 +154,6 @@ Run 5 replaces run 1 for the default suite. Its only change was moving the five 
 | TC-UI-DASH-005 | Dashboard › Quick Actions opens Doctors | ui | — | Pass |
 | TC-UI-DASH-006 | Dashboard › Quick Actions opens History | ui | — | Pass |
 | TC-UI-DASH-007 | Dashboard › Quick Actions opens Alerts | ui | — | Pass |
-| TC-UI-DASH-008 | Dashboard › upcoming count reflects patient records | ui | — | Pass |
 | TC-UI-DASH-009 | Dashboard › completed count reflects patient records | ui | — | Pass |
 | TC-UI-DASH-010 | Dashboard › cancelled count reflects patient records | ui | — | Pass |
 | TC-UI-DASH-011 | Dashboard › next appointment is the earliest future active or pending record | ui | F-21 | Expected failure |

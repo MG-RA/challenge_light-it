@@ -181,6 +181,14 @@ export class Db {
     );
   }
 
+  doctorById(id: number) {
+    return this.oneOrThrow<DoctorRow>(
+      `doctor ${id}`,
+      'select id, first_name, last_name, specialty, consultation_fee, is_active, bio, avatar_url from doctors where id = $1',
+      [id],
+    );
+  }
+
   inactiveDoctor() {
     return this.one<{ id: number }>('select id from doctors where not is_active order by id limit 1');
   }

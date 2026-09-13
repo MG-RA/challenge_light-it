@@ -4,9 +4,11 @@ Specs: [dashboard.spec.ts](../../tests/ui/dashboard.spec.ts) and [dashboard-stat
 
 **Starting state:** authenticated browser. DB queries use the read-only fixture. Each case opens the dashboard independently. Counter labels are scoped to their individual cards; matching one number elsewhere on the page cannot pass a case.
 
-**Business expectations:** upcoming means future active/pending appointments in browser local time; completed and cancelled count their respective statuses. Active displays Confirmed. These UX rules are proposed expectations, not OpenAPI guarantees. Tests require correct values after page load/reload; they do not assert live push updates while the page stays open.
+**Business expectations:** upcoming means future active/pending appointments in the suite time zone (`TEST_TIMEZONE`, which the browser shares); completed and cancelled count their respective statuses. Active displays Confirmed. These UX rules are proposed expectations, not OpenAPI guarantees. Tests require correct values after page load/reload; they do not assert live push updates while the page stays open.
 
-**Retired IDs:** TC-UI-DASH-002 (sidebar, covered in navigation) and TC-UI-DASH-003 (image size, retained as F-13 feedback). IDs are not reused.
+**Retired IDs:** TC-UI-DASH-002 (sidebar, covered in navigation), TC-UI-DASH-003 (image size, retained as F-13 feedback) and TC-UI-DASH-008 (upcoming count against a DB snapshot: the counter is static, F-23, so its pass was a coincidence of the seed data holding exactly 3; TC-UI-DASH-013 and 016 test the counter by changing data). IDs are not reused.
+
+**Locators:** counters, the next-appointment panel and Quick Actions come from [DashboardPage](../../src/pages/DashboardPage.ts). Upcoming uses its `upcoming-count` test id; Completed and Cancelled have none, so the page object takes the numeric text inside the labelled card.
 
 ---
 
@@ -132,33 +134,6 @@ Specs: [dashboard.spec.ts](../../tests/ui/dashboard.spec.ts) and [dashboard-stat
 | 3 | Observe the destination heading. | Main h1 is Notifications. |
 
 **Postconditions:** No remote data changed.
-
----
-
-## TC-UI-DASH-008: upcoming count matches the current DB snapshot
-
-| Field | Value |
-|---|---|
-| Automated test | [dashboard.spec.ts](../../tests/ui/dashboard.spec.ts) › `Dashboard › upcoming count reflects patient records` |
-| Project / tag | ui / — |
-| Type | Functional, data reconciliation |
-| Priority | P1 |
-| Finding | — |
-| Last recorded | Pass (2026-09-13) |
-
-**Preconditions:** Authenticated browser and read access to the configured patient appointments.
-
-**Test data:** Current owned appointment rows; future active/pending records.
-
-| # | Action | Expected result |
-|---|---|---|
-| 1 | Query appointments for the configured patient only. | Rows are available; an empty list is valid. |
-| 2 | Calculate the upcoming count from DB rows. | Expected count is determined independently of UI text. |
-| 3 | Open /dashboard and read the matching card. | Card number equals the calculated count. |
-
-**Postconditions:** No remote data changed.
-
-**Coverage limit:** A coincidental match cannot establish that the card refreshes. TC-UI-DASH-013–016 test changes explicitly.
 
 ---
 

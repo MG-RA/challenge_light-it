@@ -40,9 +40,9 @@ for (const missing of ['doctor_id', 'appointment_date', 'time_slot'] as const) {
     if (missing !== 'doctor_id') await booking.doctor.selectOption({ index: 1 });
     // A relative future date stays valid once the form gains a minimum date (F-12 fix).
     if (missing !== 'appointment_date') await booking.date.fill(dateAfter(30));
-    if (missing !== 'time_slot' && missing !== 'doctor_id') await page.locator('#time_slot').selectOption('09:00');
-    await page.getByTestId('submit-appointment').click();
-    const field = page.locator(`#${missing}`);
+    if (missing !== 'time_slot' && missing !== 'doctor_id') await booking.timeSlot.selectOption('09:00');
+    await booking.submit.click();
+    const field = { doctor_id: booking.doctor, appointment_date: booking.date, time_slot: booking.timeSlot }[missing];
     await expect(field).toBeFocused();
     expect(await field.evaluate((input: HTMLInputElement) => input.validity.valid)).toBe(false);
     expect(submissions).toBe(0);
@@ -58,10 +58,10 @@ test('switching doctors replaces slots and clears the previous selection', async
   const booking = new BookingPage(page);
   await booking.goto();
   await booking.doctor.selectOption({ index: 1 });
-  await page.locator('#time_slot').selectOption('09:00');
+  await booking.timeSlot.selectOption('09:00');
   await booking.doctor.selectOption({ index: 2 });
   await expect(booking.slots).toHaveText(['14:30']);
-  await expect(page.locator('#time_slot')).toHaveValue('');
+  await expect(booking.timeSlot).toHaveValue('');
 });
 
 test('availability failure has feedback and recovers after changing doctor', async ({ page }) => {
@@ -92,11 +92,11 @@ test('booking rejects a past date in the UI',
     await booking.goto();
     await booking.doctor.selectOption({ index: 1 });
     await booking.date.fill('2000-01-01');
-    await page.locator('#time_slot').selectOption('09:00');
+    await booking.timeSlot.selectOption('09:00');
     // The form is fully populated, so only the missing past-date validation remains to fail.
     await expect(booking.date).toHaveValue('2000-01-01');
-    await expect(page.locator('#time_slot')).toHaveValue('09:00');
-    await page.getByTestId('submit-appointment').click();
+    await expect(booking.timeSlot).toHaveValue('09:00');
+    await booking.submit.click();
     test.fail(true, 'F-12: only the missing past-date validation may fail');
     await expect(booking.date).toBeFocused();
     expect(await booking.date.evaluate((input: HTMLInputElement) => input.validity.rangeUnderflow)).toBe(true);

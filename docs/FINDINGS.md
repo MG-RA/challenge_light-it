@@ -6,7 +6,7 @@ The numbered list is the recommended triage order, highest priority first. **P0 
 
 **Release status: blocked** by two P0 defects, F-18 and F-16. Both were reproduced on 2026-09-12 and again on 2026-09-13 with owned records and DB verification.
 
-Evidence status is explicit: a historical report or unconfirmed policy is not presented as a freshly reproduced defect. All live owned records created during the cited runs were cleaned up; payment follow-on probes stopped when valid payment persistence failed.
+Evidence status is explicit: a historical report or unconfirmed policy is not presented as a freshly reproduced defect. All live owned records created during the cited runs were cleaned up; the duplicate-payment probe was not sent because valid payment persistence failed.
 
 ## Bugs and issues requiring action
 
@@ -22,7 +22,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Impact:** The user can believe payment was recorded when payment history and the DB contain no record. No external charge or provider failure was demonstrated.
 
-   **Recommended action / limits:** Verify persistence before returning success; then retest valid, zero, negative and duplicate payments. Later probes were stopped after the valid-payment failure.
+   **Recommended action / limits:** Verify persistence before returning success; then retest valid and duplicate payments. Zero and negative amounts are now probed independently (F-24); the duplicate probe still needs a stored valid payment and was not sent.
 
    **Evidence / coverage:** [Payment cases](../test-cases/api/payments.md).
 
@@ -186,7 +186,23 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Evidence / coverage:** [TC-APT-013](../test-cases/api/appointments.md).
 
-12. **F-15 — Appointment dates are timestamps instead of the declared date-only format**
+12. **F-24 — Payments accept zero and negative amounts with HTTP 200**
+
+   **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-13 API/DB payment write run; proposed business rule (Q tier).
+
+   **Description / actual result:** `POST /api/payments` returned HTTP 200 for `amount: 0` and for `amount: -1` on an owned, unpaid appointment. No payment row was stored, but because of F-18 no payment is stored even for a valid amount, so the empty table does not show that amounts are validated.
+
+   **How to reproduce:** Create an owned unpaid appointment; submit a cash payment with amount 0, then with amount -1; query linked payments after each.
+
+   **Expected result:** Reject non-positive amounts without storing a payment. The request schema only requires a number and documents 400 for an invalid method, so the exact rule and status need agreement.
+
+   **Impact:** Nothing is persisted today, so no bad payment record was demonstrated. Once F-18 is fixed, zero or negative payments could be recorded against an appointment unless the amount is validated.
+
+   **Recommended action / limits:** Validate the amount (positive, and possibly equal to the consultation fee) before accepting a payment; retest after F-18. The response body was not inspected, only the status.
+
+   **Evidence / coverage:** [TC-PAY-003](../test-cases/api/payments.md).
+
+13. **F-15 — Appointment dates are timestamps instead of the declared date-only format**
 
    **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-13 consolidated API list/detail checks.
 
@@ -202,7 +218,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Evidence / coverage:** [Appointment cases](../test-cases/api/appointments.md).
 
-13. **F-01 — Doctor list omits fees and active status returned by detail**
+14. **F-01 — Doctor list omits fees and active status returned by detail**
 
    **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-13 default run; suite completeness policy.
 
@@ -218,7 +234,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Evidence / coverage:** [Doctor cases](../test-cases/api/doctors.md).
 
-14. **F-14 — Patient-specific responses use public cache directives**
+15. **F-14 — Patient-specific responses use public cache directives**
 
    **Priority:** P3 · **Severity:** Low · **Status:** Reproduced: 2026-09-13 default run; no cross-user disclosure demonstrated.
 
@@ -234,7 +250,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Evidence / coverage:** [Caching cases](../test-cases/api/caching.md).
 
-15. **F-20 — Empty-signature tokens receive an undocumented plain-text 403**
+16. **F-20 — Empty-signature tokens receive an undocumented plain-text 403**
 
    **Priority:** P3 · **Severity:** Low · **Status:** Reproduced: 2026-09-13 default run.
 
@@ -254,7 +270,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
 Recorded with DB corroboration before the automated suite existed, but not reproduced since. It keeps its severity so it is not lost, and stays out of the confirmed list above until a controlled rerun confirms it.
 
-16. **F-06 — Profile save merges surname and notes into the first name**
+17. **F-06 — Profile save merges surname and notes into the first name**
 
    **Priority:** re-verify before fixing (P1 if reproduced) · **Severity:** High · **Status:** Historical manual reproduction with DB corroboration; not rerun.
 
@@ -274,7 +290,7 @@ Recorded with DB corroboration before the automated suite existed, but not repro
 
 These retain their IDs for traceability. They are not confirmed functional bugs and do not inflate the active bug list.
 
-17. **F-13 — Oversized dashboard banner**
+18. **F-13 — Oversized dashboard banner**
 
     **Priority:** P3 feedback · **Status:** measured again in the 2026-09-13 default run.
 
@@ -282,37 +298,37 @@ These retain their IDs for traceability. They are not confirmed functional bugs 
 
     **Impact / suggestion:** unnecessary image transfer. Agree a budget, resize for rendered use and consider a compressed format. Historical dimensions and missing alt text were not remeasured. Do not present estimated transfer time as measured page-load time.
 
-18. **F-19 — Reported availability load failure was not reproduced**
+19. **F-19 — Reported availability load failure was not reproduced**
 
     **Priority:** no fix assigned · **Status:** tested path passes.
 
     Selecting doctors loads returned slots. Controlled different-doctor replacement/reset and failure/recovery checks also pass (TC-UI-BOOK-005/006, 2026-09-13). Occupied-slot filtering is the separate confirmed F-05 issue. Slow responses and stale-response races remain untested. [Booking cases](../test-cases/ui/booking.md).
 
-19. **F-07 — Future-dated notification**
+20. **F-07 — Future-dated notification**
 
     **Priority:** clarification · **Status:** historical observation; fixture intent and original timestamp unknown.
 
     Stored created_at=2027-03-15 was future-dated relative to the observation. Confirm whether this was deliberate seed data before reporting an application clock defect.
 
-20. **F-08 — Confirmed versus active status terminology**
+21. **F-08 — Confirmed versus active status terminology**
 
     **Priority:** clarification · **Status:** no defect established.
 
     UI uses Confirmed; API uses active/pending/completed/cancelled. A user-facing mapping can be intentional. Current dashboard tests assume active → Confirmed and pending → Pending; obtain product agreement on labels.
 
-21. **F-09 — Different decimal string formatting**
+22. **F-09 — Different decimal string formatting**
 
     **Priority:** no fix assigned · **Status:** numeric reconciliation passes.
 
     Values such as "120" and DB 120.00 are numerically equal. The contract models monetary amounts as strings. A display-format requirement must be agreed before this is a bug.
 
-22. **F-10 — Notification isRead versus DB is_read**
+23. **F-10 — Notification isRead versus DB is_read**
 
     **Priority:** no fix assigned · **Status:** documented mapping; reconciliation passes.
 
     API camelCase and DB snake_case are intentional representations in the supplied contract. This is not a field mismatch defect.
 
-23. **F-11 — Nonnumeric doctor identifier returns 404**
+24. **F-11 — Nonnumeric doctor identifier returns 404**
 
     **Priority:** clarification · **Status:** historical observation; not rerun.
 
@@ -320,10 +336,10 @@ These retain their IDs for traceability. They are not confirmed functional bugs 
 
 ## Latest verified controls and remaining gaps
 
-Across all 85 automated cases, the runs of 2026-09-13 recorded **64 passed, 9 expected failures, 11 failed and 1 skipped** ([per-case results](../test-cases/README.md#results-summary)). Every failure reproduces a finding above. Findings reproduced by the default suite (F-01, F-12 UI, F-14, F-15, F-20, F-21, F-23 controlled) are expected failures, so CI stays green until something changes; the opt-in write and rate-limit runs keep ordinary failures. The failure count is not the bug count: F-12 is reproduced by three cases, and F-15 and F-23 by two each.
+Across all 85 automated cases, the runs of 2026-09-13 recorded **63 passed, 9 expected failures, 12 failed and 1 skipped** ([per-case results](../test-cases/README.md#results-summary)). Every failure reproduces a finding above. Findings reproduced by the default suite (F-01, F-12 UI, F-14, F-15, F-20, F-21, F-23 controlled) are expected failures, so CI stays green until something changes; the opt-in write and rate-limit runs keep ordinary failures. The failure count is not the bug count: F-12 is reproduced by three cases, and F-15 and F-23 by two each.
 
 Completed and Cancelled counters update with controlled data after reload. Quick Actions, sidebar destinations, New Appointment, logout with Back/direct-route/reload checks, required fields, malformed email, availability failure/recovery, and simulated 429 feedback pass. DB connection/table access and write denial pass. The earlier point-in-time Upcoming match was insufficient: later change-based tests establish F-23.
 
 Earlier API runs verified owned data reconciliation, token refusal and selected authorization controls; matching corrupted stored data does not establish a correct profile write. The old expected-failure handling of F-15 and automated image budget no longer describe the current suite.
 
-Remaining gaps: concurrent duplicates; a second controlled user for broader authorization; expired tokens and server-side logout revocation; successful UI booking persistence; real cancellation/completion-driven counter changes; empty next-appointment branch; stale availability races and date/doctor controls; rate-limit threshold/recovery/scope; disposable profile reset; payment follow-on cases and attributable notification mutation. Background live updates and product timezone semantics are unconfirmed. Browser logout, bounded login attempts, and availability failure/recovery are completed checks, not wholly deferred work.
+Remaining gaps: concurrent duplicates; a second controlled user for broader authorization; expired tokens and server-side logout revocation; successful UI booking persistence; real cancellation/completion-driven counter changes; empty next-appointment branch; stale availability races and date/doctor controls; rate-limit threshold/recovery/scope; disposable profile reset; duplicate payment (needs a stored valid payment) and attributable notification mutation. Background live updates and product timezone semantics are unconfirmed. Browser logout, bounded login attempts, and availability failure/recovery are completed checks, not wholly deferred work.

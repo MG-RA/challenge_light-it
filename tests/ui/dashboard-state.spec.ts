@@ -3,7 +3,7 @@ import { isUpcoming } from '../../src/support/dates';
 
 test('dashboard upcoming counter changes after a persisted booking and deletion', { tag: '@mutating' }, async ({ page, dashboardPage, owned, db, testUser }) => {
   const upcoming = async () => (await db.appointmentsForPatient(testUser.id)).filter((row) => isUpcoming(row)).length;
-  const counter = page.getByTestId('upcoming-count');
+  const counter = dashboardPage.counter('Upcoming appointments');
   const before = await upcoming();
   await dashboardPage.goto();
   await expect.soft(counter, 'baseline DB count').toHaveText(String(before));

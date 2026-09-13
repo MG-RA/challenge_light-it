@@ -48,10 +48,10 @@ Priorities drive test order and release gates. Status reflects the repo as of 20
 | R1 | One patient can read or modify another's records | **P0** | Own-record reconciliation vs DB; missing/malformed token on 8 protected GETs; cross-patient appointment read (403); altered `user_id`, `alg:none` and empty-signature tokens on profile | **Partial** — no breach found; cross-user writes and list isolation need User B; F-20 open (edge 403, access still denied) |
 | R2 | A write reports success but does not persist | **P0** | Write cases assert the stored row after every write | **Failing, release-blocking** — F-16 cancel, F-18 payment (P0) |
 | R3 | Invalid bookings are accepted and stored | **P0** | API: past date, invalid clock, inactive doctor, duplicate slot, invalid reschedule. UI: past-date validation, occupied-slot selection | **Failing** — F-02, F-03, F-04, F-05, F-12, F-17; Q-tier, not yet a gate (pending §12 Q1–4) |
-| R4 | Payment integrity (amount, ownership, duplication) | P1 | Valid step only; zero/negative/duplicate implemented but not reached | **Blocked** — the valid payment fails first (F-18) |
+| R4 | Payment integrity (amount, ownership, duplication) | P1 | Valid payment plus duplicate (TC-PAY-002); zero and negative amounts on a separate appointment (TC-PAY-003) | **Failing** — valid payment not stored (F-18); zero/negative accepted with 200 (F-24); duplicate not reached |
 | R5 | Authentication weaknesses (expiry, logout, rate limit) | P1 | API login failure; bounded failed-login probe; UI login, field validation, 429 feedback and logout | **Failing** — F-22 no throttle within ten attempts; token expiry and server-side revocation untested |
 | R6 | Contract drift between spec, API and DB | P1 | Literal schema + completeness policy on read paths | **Partial** — F-01, F-15 open |
-| R7 | Sensitive data in responses, caches or CI artifacts | P1 | Cache-header cases; redacted matcher diagnostics | **Partial** — F-14 open; traces/screenshots unredacted |
+| R7 | Sensitive data in responses, caches or CI artifacts | P1 | Cache-header cases; redacted matcher diagnostics | **Partial** — F-14 open; CI records no traces, screenshots or videos; local ones are unredacted |
 | R8 | UI journeys break for real users | P2 | Login, redirect, logout, dashboard greeting/counters/next appointment/Quick Actions, sidebar, booking availability, validation and failure recovery | **Failing** — F-21 next appointment, F-23 counter; no successful UI booking journey |
 | R9 | Accessibility, mobile, cross-browser regressions | P3 | None | **Uncovered** |
 | R10 | Performance budgets | P3 | None automated; banner size recorded as feedback | **Uncovered** — F-13 feedback, budgets not agreed |
@@ -128,7 +128,7 @@ impossible dates still fail. The published schema is not modified.
   skip conditionally with an explicit reason — skips must appear in the run summary, never be silent.
 - **Owned data only.** Created appointments carry a cryptographically unique run marker in `notes`.
   Only a row this run created *and* still owns may be rescheduled, cancelled, deleted or paid.
-- **Caps:** 20 booking submissions and 4 payments on one dedicated appointment, per worker process.
+- **Caps:** 20 booking submissions and 4 payments across two dedicated appointments, per worker process.
   A failed test restarts the worker and resets them, so they are not a run-wide budget. Expand
   variants in separately scoped runs; never raise caps implicitly.
 - **Teardown deletes what the test created and verifies absence.** A DELETE is never retried. A paid
@@ -217,18 +217,18 @@ Discovery on 2026-09-13 (`npm run test:list`):
 
 | Suite | setup | api | db | ui | total |
 |---|---:|---:|---:|---:|---:|
-| Default (`npm test`) | 1 | 34 | 2 | 33 | **70** |
-| With `RUN_MUTATING=1` | 1 | 47 | 2 | 35 | **85** |
+| Default (`npm test`) | 1 | 34 | 2 | 32 | **69** |
+| With `RUN_MUTATING=1` | 1 | 48 | 2 | 34 | **85** |
 
-15 write cases (13 API, 2 UI). The default count includes the rate-limit case, which skips unless
+16 write cases (14 API, 2 UI). The default count includes the rate-limit case, which skips unless
 `RUN_RATE_LIMIT=1`. Live endpoint coverage reaches **14 of 17 operations**: `POST /auth/logout` and
 `PUT /users/me` have no API coverage, and `PUT /notifications/{id}/read` is automated but skips
 without an attributable notification. Calling an operation is not case coverage; remaining gaps are
 in §10.
 
-**Latest recorded results** (one full run of every suite on 2026-09-13, then the default suite again
-in CI mode after marking its known defects):
-**64 passed, 9 expected failures, 11 failed, 1 skipped**. The default suite exits green; all 11
+**Latest recorded results** (one full run of every suite on 2026-09-13, with the default suite and the
+payment writes rerun after later changes the same day):
+**63 passed, 9 expected failures, 12 failed, 1 skipped**. The default suite exits green; all 12
 ordinary failures come from the opt-in runs. Every failure reproduces a finding; no unexpected passes,
 retries or suite errors; write cleanup verified. Per-run
 tallies are in the [run record](test-cases/README.md#run-record) and per-case results in the
@@ -257,7 +257,7 @@ is unmet — record it as blocked instead.
 **Wave 2 — retest and finish the write path** *(prerequisite: fixes for F-16/F-17/F-18)*
 
 - Retest cancellation, invalid reschedule and payment persistence within existing caps.
-- Resume the blocked zero / negative / duplicate payment steps.
+- Resume the duplicate payment step, which needs a stored valid payment; retest F-24 once payments persist.
 - Concurrent duplicate-booking attempt; the sequential case already fails.
 - Demonstrate paid-record cleanup live rather than only locally.
 

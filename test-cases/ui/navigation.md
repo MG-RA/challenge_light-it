@@ -6,7 +6,7 @@ Spec: [tests/ui/navigation.spec.ts](../../tests/ui/navigation.spec.ts) · Projec
 
 **Page objects:** [Sidebar](../../src/pages/components/Sidebar.ts) finds links by a name ending with the section label. The destination headings are [DoctorsPage](../../src/pages/DoctorsPage.ts), [AppointmentsPage](../../src/pages/AppointmentsPage.ts) and [NotificationsPage](../../src/pages/NotificationsPage.ts). Each heading is an `h1` in `main` whose name matches the section, case-insensitive.
 
-TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:7](../../tests/ui/navigation.spec.ts:7).
+TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:8](../../tests/ui/navigation.spec.ts:8).
 
 | Shared field | Value |
 |---|---|
@@ -21,7 +21,7 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:7](../../tests/ui/
 
 | Field | Value |
 |---|---|
-| Automated test | [navigation.spec.ts:8](../../tests/ui/navigation.spec.ts:8) › `Sidebar destinations › opens Doctors with its page heading` |
+| Automated test | [navigation.spec.ts:9](../../tests/ui/navigation.spec.ts:9) › `Sidebar destinations › opens Doctors with its page heading` |
 | Project / tag | ui / — |
 
 | # | Action | Expected result |
@@ -34,7 +34,7 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:7](../../tests/ui/
 
 | Field | Value |
 |---|---|
-| Automated test | [navigation.spec.ts:8](../../tests/ui/navigation.spec.ts:8) › `Sidebar destinations › opens Appointments with its page heading` |
+| Automated test | [navigation.spec.ts:9](../../tests/ui/navigation.spec.ts:9) › `Sidebar destinations › opens Appointments with its page heading` |
 | Project / tag | ui / — |
 
 | # | Action | Expected result |
@@ -47,7 +47,7 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:7](../../tests/ui/
 
 | Field | Value |
 |---|---|
-| Automated test | [navigation.spec.ts:8](../../tests/ui/navigation.spec.ts:8) › `Sidebar destinations › opens Notifications with its page heading` |
+| Automated test | [navigation.spec.ts:9](../../tests/ui/navigation.spec.ts:9) › `Sidebar destinations › opens Notifications with its page heading` |
 | Project / tag | ui / — |
 
 | # | Action | Expected result |
@@ -62,7 +62,7 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:7](../../tests/ui/
 
 | Field | Value |
 |---|---|
-| Automated test | [navigation.spec.ts:18](../../tests/ui/navigation.spec.ts:18) › `Sidebar destinations › returns to Dashboard from Doctors` |
+| Automated test | [navigation.spec.ts:19](../../tests/ui/navigation.spec.ts:19) › `Sidebar destinations › returns to Dashboard from Doctors` |
 | Project / tag | ui / — |
 
 | # | Action | Expected result |
@@ -78,7 +78,7 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:7](../../tests/ui/
 
 | Field | Value |
 |---|---|
-| Automated test | [navigation.spec.ts:28](../../tests/ui/navigation.spec.ts:28) › `sidebar logout clears the session and protects routes after reload and back` |
+| Automated test | [navigation.spec.ts:29](../../tests/ui/navigation.spec.ts:29) › `sidebar logout clears the session and protects routes after reload and back` |
 | Project / tag | ui / — |
 | Type | Security, session handling |
 | Priority | P0 |
@@ -103,7 +103,7 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:7](../../tests/ui/
 
 | Field | Value |
 |---|---|
-| Automated test | [navigation.spec.ts:47](../../tests/ui/navigation.spec.ts:47) › `sidebar New Appointment opens booking form` |
+| Automated test | [navigation.spec.ts:48](../../tests/ui/navigation.spec.ts:48) › `sidebar New Appointment opens booking form` |
 | Project / tag | ui / — |
 | Type | Functional, navigation |
 | Priority | P1 |
