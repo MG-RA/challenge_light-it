@@ -1,0 +1,56 @@
+name: Playwright
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# The target is a shared remote env: don't run two suites against it for the same ref.
+concurrency:
+  group: playwright-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # Pull requests from forks receive no secrets and could not reach the target.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npx playwright install --with-deps chromium
+
+      # Secrets are scoped to this step only, not to install scripts run by `npm ci`.
+      - run: npx playwright test
+        env:
+          BASE_URL: https://light-it-qa-challenge.vercel.app
+          API_BASE_URL: https://qa-challenge-backend.vercel.app
+          DB_PORT: '6543'
+          DB_NAME: postgres
+          APP_USER_EMAIL: ${{ secrets.APP_USER_EMAIL }}
+          APP_USER_PASSWORD: ${{ secrets.APP_USER_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

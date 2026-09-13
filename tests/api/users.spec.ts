@@ -1,22 +1,15 @@
-import { test, expect } from '../../src/fixtures';
-import type { User } from '../../src/api/types';
-import { env } from '../../src/config/env';
+import { test, expect, expectCompleteJson } from '../../src/fixtures';
 
 test.describe('Users API', () => {
-  test('GET /users/me returns the logged-in user, matching the DB', async ({ api, db }) => {
-    const res = await api.getMe();
-    expect(res.status()).toBe(200);
-    const me = (await res.json()) as User;
+  test('GET /users/me returns the logged-in user, matching the DB', async ({ api, testUser }) => {
+    const me = await expectCompleteJson(await api.getMe(), 200, 'User');
 
-    expect(me.email).toBe(env.user.email);
     expect(me).not.toHaveProperty('password_hash');
-
-    const dbUser = await db.userByEmail(env.user.email);
-    expect(dbUser, 'user exists in DB').toBeDefined();
     expect(me).toMatchObject({
-      id: dbUser!.id,
-      first_name: dbUser!.first_name,
-      last_name: dbUser!.last_name,
+      id: testUser.id,
+      email: testUser.email,
+      first_name: testUser.first_name,
+      last_name: testUser.last_name,
     });
   });
 });

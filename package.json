@@ -4,23 +4,33 @@
   "private": true,
   "description": "Playwright (TypeScript) test suite for the Light-it QA challenge: UI, API and DB checks",
   "type": "commonjs",
+  "engines": {
+    "node": ">=26"
+  },
   "scripts": {
     "test": "playwright test",
+    "test:list": "playwright test --list --reporter=list",
     "test:ui": "playwright test --project=ui",
     "test:api": "playwright test --project=api",
     "test:db": "playwright test --project=db",
+    "test:writes": "playwright test --project=api --grep @mutating",
     "test:headed": "playwright test --project=ui --headed",
     "test:debug": "playwright test --debug",
     "pw:ui": "playwright test --ui",
     "report": "playwright show-report",
     "codegen": "playwright codegen https://light-it-qa-challenge.vercel.app/login",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "lint": "oxlint"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
-    "@types/node": "^22.20.2",
+    "@types/node": "^26.5.1",
     "@types/pg": "^8.23.1",
-    "dotenv": "^17.4.2",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "eslint-plugin-playwright": "^2.11.0",
+    "oxlint": "^1.82.0",
+    "oxlint-tsgolint": "^7.0.2001",
     "pg": "^8.23.0",
     "typescript": "^7.0.2"
   }
