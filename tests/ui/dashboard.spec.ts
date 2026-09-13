@@ -97,12 +97,10 @@ for (const [label, expected, finding] of [
   test(
     `dashboard ${label} counter updates when appointment data changes`,
     details,
-    async ({ page, dashboardPage, testUser }) => {
+    async ({ page, apiMocks, dashboardPage, testUser }) => {
       // Controlled responses isolate UI aggregation from backend lifecycle defects.
       const future = dateAfter(7);
       const past = dateAfter(-7);
-      let populated = false;
-      let reads = 0;
       const statuses = ['active', 'pending', 'completed', 'cancelled', 'cancelled', 'active'];
       const records = statuses.map((status, index) => ({
         id: 900001 + index,
@@ -115,35 +113,29 @@ for (const [label, expected, finding] of [
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }));
-      await page.route('**/api/appointments*', async (route) => {
-        if (
-          new URL(route.request().url()).pathname !== '/api/appointments' ||
-          route.request().method() !== 'GET'
-        ) {
-          return route.continue();
-        }
-        reads++;
-        await route.fulfill({ json: populated ? records : [] });
-      });
+      const appointments = await apiMocks.appointmentList([]);
       const count = dashboardPage.counter(label);
+
       await dashboardPage.goto();
       await expect(count, `${label} counter is rendered`).toHaveText(/^\d+$/);
-      const emptyReads = reads;
+      const emptyReads = appointments.reads;
       expect(emptyReads, 'dashboard reads appointment data on initial load').toBeGreaterThan(0);
+
       // Completed and Cancelled run this same flow unmarked, so they still guard the reload refresh hard.
       if (finding) test.fail(true, `${finding}: only the ${label} counter values may fail`);
       await expect.soft(count, `${label}: empty dataset`).toHaveText('0');
-      populated = true;
+
+      appointments.serve(records);
       await page.reload();
       await expect
         .soft(count, `${label}: changed dataset after reload`)
         .toHaveText(String(expected));
       expect
-        .soft(reads, 'dashboard refreshes appointment data on reload')
+        .soft(appointments.reads, 'dashboard refreshes appointment data on reload')
         .toBeGreaterThan(emptyReads);
       test.info().annotations.push({
         type: 'observation',
-        description: `${label}: intercepted appointment reads=${reads}`,
+        description: `${label}: intercepted appointment reads=${appointments.reads}`,
       });
     },
   );

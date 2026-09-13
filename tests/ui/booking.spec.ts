@@ -3,16 +3,14 @@ import type { BookingField, BookingForm } from '../../src/pages/BookingPage';
 import { dateAfter } from '../../src/support/dates';
 
 test('booking loads the selected doctor availability into time options without submitting', async ({
-  page,
   db,
+  apiMocks,
   bookingPage,
 }) => {
   const doctors = (await db.activeDoctors()).slice(0, 2);
   test.skip(doctors.length < 2, 'Two active doctors needed to verify changing the selected doctor');
-  // Enforce read-only exploration even if the application unexpectedly submits.
-  await page.route('**/api/**', (route) =>
-    route.request().method() === 'GET' ? route.continue() : route.abort(),
-  );
+  // Real availability responses, but nothing can be written even if the app unexpectedly submits.
+  await apiMocks.allowOnlyReads();
 
   await bookingPage.goto();
   await bookingPage.date.fill(dateAfter(1));
@@ -37,16 +35,13 @@ const requiredFields: { missing: BookingField; form: BookingForm }[] = [
 ];
 
 for (const { missing, form } of requiredFields) {
-  test(`booking validates missing ${missing} before submitting`, async ({ page, bookingPage }) => {
-    let submissions = 0;
-    await page.route('**/api/doctors/*/availability*', (route) =>
-      route.fulfill({ json: { time_slots: ['09:00'] } }),
-    );
-    await page.route('**/api/appointments', async (route) => {
-      if (route.request().method() === 'GET') return route.continue();
-      submissions++;
-      await route.fulfill({ status: 400, json: { error: 'Unexpected submission' } });
-    });
+  test(`booking validates missing ${missing} before submitting`, async ({
+    page,
+    apiMocks,
+    bookingPage,
+  }) => {
+    await apiMocks.availability(['09:00']);
+    const submissions = await apiMocks.blockBookingSubmissions();
 
     await bookingPage.goto();
     await bookingPage.fill(form);
@@ -55,21 +50,16 @@ for (const { missing, form } of requiredFields) {
     const field = bookingPage.field(missing);
     await expect(field).toBeFocused();
     expect(await field.evaluate((input: HTMLInputElement) => input.validity.valid)).toBe(false);
-    expect(submissions).toBe(0);
+    expect(submissions.count).toBe(0);
     await expect(page).toHaveURL(/\/appointments\/new$/);
   });
 }
 
 test('switching doctors replaces slots and clears the previous selection', async ({
-  page,
+  apiMocks,
   bookingPage,
 }) => {
-  let calls = 0;
-  await page.route('**/api/doctors/*/availability*', (route) =>
-    route.fulfill({
-      json: { time_slots: ++calls === 1 ? ['09:00'] : ['14:30'] },
-    }),
-  );
+  await apiMocks.availability(['09:00'], ['14:30']);
 
   await bookingPage.goto();
   await bookingPage.fill({ doctor: { index: 1 }, slot: '09:00' });
@@ -80,17 +70,12 @@ test('switching doctors replaces slots and clears the previous selection', async
 });
 
 test('availability failure has feedback and recovers after changing doctor', async ({
-  page,
+  apiMocks,
   bookingPage,
 }) => {
-  let calls = 0;
-  await page.route('**/api/doctors/*/availability*', (route) =>
-    ++calls === 1
-      ? route.fulfill({
-          status: 500,
-          json: { error: 'Availability unavailable. Please try again.' },
-        })
-      : route.fulfill({ json: { time_slots: ['14:30'] } }),
+  await apiMocks.availability(
+    { status: 500, error: 'Availability unavailable. Please try again.' },
+    ['14:30'],
   );
 
   await bookingPage.goto();
@@ -111,16 +96,9 @@ test(
         'F-12: the date input has no minimum and a past date is not blocked (docs/FINDINGS.md)',
     },
   },
-  async ({ page, bookingPage }) => {
-    let submissions = 0;
-    await page.route('**/api/doctors/*/availability*', (route) =>
-      route.fulfill({ json: { time_slots: ['09:00'] } }),
-    );
-    await page.route('**/api/appointments', async (route) => {
-      if (route.request().method() === 'GET') return route.continue();
-      submissions++;
-      await route.fulfill({ status: 400, json: { error: 'Past date' } });
-    });
+  async ({ apiMocks, bookingPage }) => {
+    await apiMocks.availability(['09:00']);
+    const submissions = await apiMocks.blockBookingSubmissions();
 
     await bookingPage.goto();
     await bookingPage.fill({ doctor: { index: 1 }, date: '2000-01-01', slot: '09:00' });
@@ -134,6 +112,6 @@ test(
     expect(
       await bookingPage.date.evaluate((input: HTMLInputElement) => input.validity.rangeUnderflow),
     ).toBe(true);
-    expect(submissions).toBe(0);
+    expect(submissions.count).toBe(0);
   },
 );

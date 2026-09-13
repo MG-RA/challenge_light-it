@@ -17,6 +17,7 @@ Before pushing: `npm run format && npm run typecheck && npm run lint && npm test
 | DB oracle | `src/db/Db.ts` | Named, parameterized lookups. No SQL in spec files. |
 | Fixtures | `src/fixtures/` | `test` and `expect` with the custom matchers. |
 | Page objects | `src/pages/` | Readonly locators plus actions (`fill`, `login`, `chooseDoctor`), no assertions. Prefer test ids and roles; keep any id, CSS or structural lookup inside the page object. Shared layout (sidebar, page title) is `AppShell`. Specs get page objects from fixtures (`appShell`, `loginPage`, `dashboardPage`, `bookingPage`), not `new`. |
+| Network stubs | `src/mocks/ApiMocks.ts` | UI tests that control backend answers use the `apiMocks` fixture, never `page.route` directly. A stubbed test proves UI behavior only. |
 | Specs | `tests/api`, `tests/ui` | Assertions live here. |
 
 Import `test` and `expect` from `src/fixtures` (or from `tests/api/writes.ts` when a test needs the

@@ -3,6 +3,7 @@ import { ApiClient } from '../api/ApiClient';
 import { loadToken } from '../auth/session';
 import { env } from '../config/env';
 import { Db, type UserRow } from '../db/Db';
+import { ApiMocks } from '../mocks/ApiMocks';
 import { BookingPage } from '../pages/BookingPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { LoginPage } from '../pages/LoginPage';
@@ -19,6 +20,8 @@ type TestFixtures = {
   anonApi: ApiClient;
   /** API client authenticated as the challenge user (token from auth.setup). */
   api: ApiClient;
+  /** Network stubs for UI tests that control backend answers (they prove UI behavior only). */
+  apiMocks: ApiMocks;
   /** Sidebar and page title shared by every signed-in page. */
   appShell: AppShell;
   loginPage: LoginPage;
@@ -90,6 +93,10 @@ export const test = base.extend<TestOptions & TestFixtures, WorkerFixtures>({
 
   api: ({ playwright, apiBaseURL, token }, use) =>
     provideApiClient(playwright, apiBaseURL, token, use),
+
+  apiMocks: async ({ page }, use) => {
+    await use(new ApiMocks(page));
+  },
 
   appShell: async ({ page }, use) => {
     await use(new AppShell(page));

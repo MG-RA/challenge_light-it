@@ -49,12 +49,8 @@ const invalidLogins = [
 ] as const;
 
 for (const { scenario, email, password, invalid } of invalidLogins) {
-  test(`login validates ${scenario} before submitting`, async ({ page, loginPage }) => {
-    let requests = 0;
-    await page.route('**/api/auth/login', async (route) => {
-      requests++;
-      await route.fulfill({ status: 400, json: { error: 'Unexpected submission' } });
-    });
+  test(`login validates ${scenario} before submitting`, async ({ page, apiMocks, loginPage }) => {
+    const submissions = await apiMocks.blockLoginSubmissions();
 
     await loginPage.goto();
     await loginPage.login(email, password);
@@ -62,19 +58,17 @@ for (const { scenario, email, password, invalid } of invalidLogins) {
     const field = loginPage[invalid];
     await expect(field).toBeFocused();
     expect(await field.evaluate((input: HTMLInputElement) => input.validity.valid)).toBe(false);
-    expect(requests).toBe(0);
+    expect(submissions.count).toBe(0);
     await expect(page).toHaveURL(/\/login$/);
   });
 }
 
-test('login shows actionable feedback for throttling', async ({ page, loginPage }) => {
-  await page.route('**/api/auth/login', (route) =>
-    route.fulfill({
-      status: 429,
-      headers: { 'Retry-After': '60' },
-      json: { error: 'Too many requests. Try again in 60 seconds.' },
-    }),
-  );
+test('login shows actionable feedback for throttling', async ({ page, apiMocks, loginPage }) => {
+  await apiMocks.answerLogin({
+    status: 429,
+    headers: { 'Retry-After': '60' },
+    json: { error: 'Too many requests. Try again in 60 seconds.' },
+  });
 
   await loginPage.goto();
   await loginPage.login('qa@example.com', 'deliberately-invalid');

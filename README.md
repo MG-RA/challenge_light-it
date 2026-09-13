@@ -113,6 +113,7 @@ src/auth/            shared session and forged-token helpers
 src/config/          environment validation and write opt-in
 src/db/              parameterized DB lookups and bounded state observation
 src/fixtures/        test fixtures, custom matchers, redacted diagnostics
+src/mocks/           network stubs for UI tests that control backend answers
 src/pages/           page objects and the shared app shell (sidebar, page title)
 src/support/         calendar math in the suite time zone
 tests/api/           API read cases, opt-in writes, ownership and cleanup helpers
