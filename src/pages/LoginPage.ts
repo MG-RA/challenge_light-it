@@ -1,11 +1,10 @@
-import type { Locator, Page } from '@playwright/test';
+import type { Locator, Page, Response } from '@playwright/test';
 
 export class LoginPage {
   readonly emailInput: Locator;
   readonly passwordInput: Locator;
   readonly submitButton: Locator;
   readonly errorMessage: Locator;
-  readonly throttleMessage: Locator;
 
   constructor(private readonly page: Page) {
     this.emailInput = page.locator('#email').describe('Email input');
@@ -13,10 +12,7 @@ export class LoginPage {
     this.submitButton = page.getByRole('button', { name: 'Sign In' }).describe('Sign In button');
     this.errorMessage = page
       .getByText('Invalid email or password', { exact: false })
-      .describe('Login rejection feedback');
-    this.throttleMessage = page
-      .getByText(/too many|try again in|wait.*seconds/i)
-      .describe('Login throttling feedback');
+      .describe('Login rejection message');
   }
 
   async goto(): Promise<void> {
@@ -29,14 +25,13 @@ export class LoginPage {
     await this.submitButton.click();
   }
 
-  async loginAndWaitForResponse(email: string, password: string) {
-    const [response] = await Promise.all([
-      this.page.waitForResponse(
-        (res) =>
-          new URL(res.url()).pathname === '/api/auth/login' && res.request().method() === 'POST',
-      ),
-      this.login(email, password),
-    ]);
+  /** Submits the form and returns the login API response it triggers. */
+  async loginAndWaitForResponse(email: string, password: string): Promise<Response> {
+    const response = this.page.waitForResponse(
+      (res) =>
+        new URL(res.url()).pathname === '/api/auth/login' && res.request().method() === 'POST',
+    );
+    await this.login(email, password);
     return response;
   }
 }

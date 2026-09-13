@@ -5,8 +5,6 @@ import '../config/env';
 // derive a calendar date from toISOString(): that is the UTC date, which differs from the local one
 // for part of every day outside UTC.
 
-type Scheduled = { appointment_date: string; time_slot: string };
-
 /** The calendar date `days` from today in the suite time zone, as YYYY-MM-DD. */
 export function dateAfter(days: number, from = new Date()): string {
   const date = new Date(from.getFullYear(), from.getMonth(), from.getDate() + days);
@@ -15,12 +13,16 @@ export function dateAfter(days: number, from = new Date()): string {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-/** Start of a stored appointment in the suite time zone; Invalid Date for impossible slots such as 25:99. */
-export function appointmentStart({ appointment_date, time_slot }: Scheduled): Date {
-  return new Date(`${appointment_date}T${time_slot}`);
+/** How the app displays a calendar date, e.g. '2026-09-03' → '9/3/2026' (en-US, no leading zeros). */
+export function displayDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split('-');
+  return `${Number(month)}/${Number(day)}/${Number(year)}`;
 }
 
-/** Proposed dashboard rule: an active or pending appointment that starts now or later. */
-export function isUpcoming(row: Scheduled & { status: string }, now = new Date()): boolean {
-  return ['active', 'pending'].includes(row.status) && appointmentStart(row) >= now;
+/**
+ * The calendar date of an API appointment. The API sends UTC-midnight timestamps instead of the
+ * documented YYYY-MM-DD (Part 1, BUG-03), so only the date part is meaningful.
+ */
+export function apiCalendarDate(value: string): string {
+  return value.slice(0, 10);
 }

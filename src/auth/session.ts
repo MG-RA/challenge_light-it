@@ -29,13 +29,6 @@ export function storedToken(page: Page): Promise<string | null> {
   return page.evaluate(() => localStorage.getItem('token'));
 }
 
-/** Drops the browser session (cookies and stored token) so the page starts signed out. */
-export async function signOutBrowser(page: Page): Promise<void> {
-  await page.context().clearCookies();
-  await page.goto('/login');
-  await page.evaluate(() => localStorage.clear());
-}
-
 export function loadToken(): string {
   if (!fs.existsSync(TOKEN_FILE)) {
     throw new Error(

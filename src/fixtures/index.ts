@@ -3,12 +3,13 @@ import { ApiClient } from '../api/ApiClient';
 import { loadToken } from '../auth/session';
 import { env } from '../config/env';
 import { Db, type UserRow } from '../db/Db';
-import { ApiMocks } from '../mocks/ApiMocks';
+import { AppointmentsPage } from '../pages/AppointmentsPage';
 import { BookingPage } from '../pages/BookingPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { LoginPage } from '../pages/LoginPage';
-import { AppShell } from '../pages/components/AppShell';
+import { Sidebar } from '../pages/components/Sidebar';
 import { expect } from './matchers';
+import { TestAppointments } from './testAppointments';
 
 export type TestOptions = {
   /** Backend API base URL. A project can override it with `use: { apiBaseURL }`. */
@@ -20,13 +21,14 @@ type TestFixtures = {
   anonApi: ApiClient;
   /** API client authenticated as the challenge user (token from auth.setup). */
   api: ApiClient;
-  /** Network stubs for UI tests that control backend answers (they prove UI behavior only). */
-  apiMocks: ApiMocks;
-  /** Sidebar and page title shared by every signed-in page. */
-  appShell: AppShell;
+  /** The sidebar shared by every signed-in page. */
+  sidebar: Sidebar;
   loginPage: LoginPage;
   dashboardPage: DashboardPage;
   bookingPage: BookingPage;
+  appointmentsPage: AppointmentsPage;
+  /** Appointments created by a UI flow; deleted through the API after the test. */
+  testAppointments: TestAppointments;
 };
 
 type WorkerFixtures = {
@@ -94,12 +96,8 @@ export const test = base.extend<TestOptions & TestFixtures, WorkerFixtures>({
   api: ({ playwright, apiBaseURL, token }, use) =>
     provideApiClient(playwright, apiBaseURL, token, use),
 
-  apiMocks: async ({ page }, use) => {
-    await use(new ApiMocks(page));
-  },
-
-  appShell: async ({ page }, use) => {
-    await use(new AppShell(page));
+  sidebar: async ({ page }, use) => {
+    await use(new Sidebar(page));
   },
 
   loginPage: async ({ page }, use) => {
@@ -112,6 +110,19 @@ export const test = base.extend<TestOptions & TestFixtures, WorkerFixtures>({
 
   bookingPage: async ({ page }, use) => {
     await use(new BookingPage(page));
+  },
+
+  appointmentsPage: async ({ page }, use) => {
+    await use(new AppointmentsPage(page));
+  },
+
+  testAppointments: async ({ api }, use) => {
+    const appointments = new TestAppointments(api);
+    try {
+      await use(appointments);
+    } finally {
+      await appointments.cleanup();
+    }
   },
 });
 

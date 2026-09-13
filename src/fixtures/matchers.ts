@@ -1,4 +1,4 @@
-import { expect as base, type APIResponse, type Locator } from '@playwright/test';
+import { expect as base, type APIResponse } from '@playwright/test';
 import { schemaErrors, type SchemaRef } from '../api/contract';
 import { diagnosticUrl, redactedBody } from './redact';
 
@@ -31,25 +31,5 @@ export const expect = base.extend({
         ? `Expected value not to match ${ref}`
         : `Value does not match ${ref}:\n${shown.join('\n')}`);
     return { name: 'toMatchSchema', pass, expected: ref, message };
-  },
-
-  /**
-   * Asserts a form control fails native constraint validation, optionally for one reason such as
-   * 'rangeUnderflow'. The failure names the control and lists the constraints that do fail.
-   */
-  async toBeInvalid(locator: Locator, reason?: Exclude<keyof ValidityState, 'valid'>) {
-    const validity = await locator.evaluate((element: HTMLInputElement) => {
-      const state: Record<string, boolean> = {};
-      for (const key in element.validity) state[key] = element.validity[key as keyof ValidityState];
-      return state;
-    });
-    const pass = !validity.valid && (reason === undefined || validity[reason] === true);
-    const failing = Object.keys(validity).filter((key) => key !== 'valid' && validity[key]);
-    const message = () =>
-      `${this.utils.matcherHint('toBeInvalid', 'locator', reason ?? '', { isNot: this.isNot })}\n\n` +
-      `${locator.description() ?? locator.toString()} should ${this.isNot ? 'pass' : 'fail'} ` +
-      `native validation${reason ? ` because of ${reason}` : ''}.\n` +
-      `Failing constraints: ${failing.length ? failing.join(', ') : 'none (the value is valid)'}`;
-    return { name: 'toBeInvalid', pass, message };
   },
 });
