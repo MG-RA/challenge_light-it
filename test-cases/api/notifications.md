@@ -38,7 +38,7 @@ Spec: [tests/api/notifications.spec.ts](../../tests/api/notifications.spec.ts) Â
 | Type | Functional, state verification, idempotence |
 | Priority / basis | P1 / C (200), P (only the target flag changes, sibling notifications unchanged), Q (a repeat is 200 with no change) |
 | Finding | â€” |
-| Last recorded | **Skipped** (2026-09-12 write run). No new unread notification could be attributed to the run. |
+| Last recorded | **Skipped** (2026-09-13 write run). No new unread notification could be attributed to the run. |
 
 **Safety rule:** existing notifications are **never** changed. Only a notification that this run created and can be traced back to may be marked read.
 

@@ -39,7 +39,7 @@ Spec: [tests/api/payments.spec.ts](../../tests/api/payments.spec.ts) · Project:
 | Type | Functional, business rules, state verification |
 | Priority / basis | P0 / C (200 with `success`/`payment_id`), P (one persisted payment, returned ID equals the stored ID), Q (zero, negative and duplicate rejected with 400 or 409) |
 | Finding | **F-18** |
-| Last recorded | **Fail, F-18** (2026-09-12 write run). The valid step returned HTTP 200, but no payment was persisted for appointment 1137, so step 4 failed. Steps 5–8 were not reached, so the zero, negative and duplicate submissions were never sent. The appointment was deleted. |
+| Last recorded | **Fail, F-18** (2026-09-13 write run). The valid step returned HTTP 200, but no payment was persisted for appointment 1156, so step 4 failed. Steps 5–8 were not reached, so the zero, negative and duplicate submissions were never sent. The appointment was deleted. |
 
 **Preconditions**
 - The shared `@mutating` preconditions (see [appointments.md](appointments.md#shared-mechanics)).

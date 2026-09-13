@@ -60,7 +60,7 @@ These apply to every case unless the case says otherwise.
 
 ## Results summary
 
-Latest recorded result per case: API writes on 2026-09-12; API reads, UI, DB and the rate-limit check on 2026-09-13.
+Latest recorded result per case, all from the full run of 2026-09-13 described in the [run record](#run-record).
 
 | Result | Cases |
 |---|---:|
@@ -70,6 +70,19 @@ Latest recorded result per case: API writes on 2026-09-12; API reads, UI, DB and
 | Skipped | 1 (TC-NOT-002: no attributable notification) |
 
 Every failure reproduces a finding; none is a suite error. The failure count is not the bug count, because some findings fail more than one case.
+
+## Run record
+
+2026-09-13, commit `d152cd3` (branch `chore/node26-quality-batch1`, clean tree), local Chromium, run in the order the [QA plan](../QA_PLAN.md#6-execution-model) requires. No marked rows existed before the write runs.
+
+| Order | Run | Command | Duration | Result |
+|---:|---|---|---:|---|
+| 1 | Default | `npm test` | 32 s | 60 passed, 4 expected failures, 5 failed (F-12 UI, F-15 ×2, F-21, F-23), 1 skipped (rate limit, gated) |
+| 2 | API writes | `RUN_MUTATING=1 npm run test:writes` | 2.3 min | setup + 4 passed, 8 failed (F-02, F-03, F-04, F-12 ×2, F-16, F-17, F-18), 1 skipped (TC-NOT-002) |
+| 3 | UI writes | `RUN_MUTATING=1 npx playwright test tests/ui/booking-state.spec.ts tests/ui/dashboard-state.spec.ts --project=ui --workers=1` | 33 s | setup passed, 2 failed (F-05, F-23) |
+| 4 | Rate limit | `RUN_RATE_LIMIT=1 npx playwright test tests/api/rate-limit.spec.ts --project=api --no-deps --workers=1` | 4 s | 1 failed (F-22: ten 401s, no 429) |
+
+Each case is counted once (the setup case in run 1), which gives the 85-case summary above. There were no retries, no flaky results and no unexpected passes; every expected failure matched its recorded signature on inspection. After runs 2 and 3, a DB query for `notes like 'qa-suite %'` returned no rows, and no payment residue was created because the valid payment did not persist (F-18). Raw HTML/JSON reports stay local because traces and screenshots are not redacted.
 
 ## Traceability matrix
 

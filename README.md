@@ -14,7 +14,7 @@ Playwright and TypeScript test suite for MedAppoint, covering the web UI, the RE
 
 **Automation:** 85 Playwright tests in 16 files. The default run executes 70; the other 15 write owned data to the shared environment and run only when explicitly enabled.
 
-**Latest results** (API writes on 2026-09-12; API reads, UI, DB and the rate-limit check on 2026-09-13):
+**Latest results:** one full run of every suite on 2026-09-13, against commit `d152cd3` with a clean tree (default, API writes, UI writes, then the rate-limit check):
 
 | Result | Cases |
 |---|---:|
@@ -23,7 +23,7 @@ Playwright and TypeScript test suite for MedAppoint, covering the web UI, the RE
 | Failed, each reproducing a finding | 16 |
 | Skipped (no attributable notification) | 1 |
 
-Per-case results are in the [test-case matrix](test-cases/README.md#traceability-matrix). No single full run of the current tree has been recorded yet.
+Every failure reproduces a documented finding; there were no new failures, no unexpected passes, no retries and no suite errors. Write cleanup was verified: no marked rows remained and no payment residue was created. Per-run tallies and durations are in the [run record](test-cases/README.md#run-record); per-case results are in the [test-case matrix](test-cases/README.md#traceability-matrix).
 
 **Bugs requiring action** (full details in [FINDINGS.md](docs/FINDINGS.md)):
 
@@ -115,6 +115,6 @@ QA_PLAN.md           scope, risks, approach and roadmap
 
 ## Reports and CI
 
-HTML reports go to `playwright-report/`; JSON and JUnit results go to `test-results/`. GitHub Actions ([workflow](.github/workflows/playwright.yml)) runs type checking, lint and the default suite, and needs repository secrets `APP_USER_EMAIL`, `APP_USER_PASSWORD`, `DB_HOST`, `DB_USER` and `DB_PASSWORD`. A hosted CI run has not been verified yet.
+HTML reports go to `playwright-report/`; JSON and JUnit results go to `test-results/`. GitHub Actions ([workflow](.github/workflows/playwright.yml)) runs type checking, lint and the default suite, and needs repository secrets `APP_USER_EMAIL`, `APP_USER_PASSWORD`, `DB_HOST`, `DB_USER` and `DB_PASSWORD`. A hosted CI run has not been verified yet: the repository has no GitHub remote configured, so the recorded results come from local runs.
 
 Status diagnostics redact response bodies, but screenshots, traces and assertion diffs can still contain account data. Review artifacts before sharing them; `.env`, `.auth/` and raw reports are git-ignored.

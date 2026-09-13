@@ -208,9 +208,11 @@ Discovery on 2026-09-13 (`npm run test:list`):
 without an attributable notification. Calling an operation is not case coverage; remaining gaps are
 in §10.
 
-**Latest recorded results** (API writes 2026-09-12; API reads, UI, DB and rate limit 2026-09-13):
+**Latest recorded results** (one full run of every suite on 2026-09-13, commit `d152cd3`, clean tree):
 **64 passed, 4 expected failures (F-01, F-14 ×2, F-20), 16 failed, 1 skipped**. Every failure
-reproduces a finding. Per-case results are in the [test-case matrix](test-cases/README.md#traceability-matrix).
+reproduces a finding; no unexpected passes, retries or suite errors; write cleanup verified. Per-run
+tallies are in the [run record](test-cases/README.md#run-record) and per-case results in the
+[test-case matrix](test-cases/README.md#traceability-matrix).
 
 ## 10. Roadmap
 
@@ -221,8 +223,8 @@ is unmet — record it as blocked instead.
 
 - ~~Run default + write suites once and retire the stale totals.~~ Done 2026-09-12.
 - ~~Consolidate documentation into README, this plan, FINDINGS and test cases.~~ Done 2026-09-13.
-- Run the full default, write and rate-limit suites on one day against the current tree, so every
-  case's last result comes from the same code.
+- ~~Run the full default, write and rate-limit suites on one day against the current tree, so every
+  case's last result comes from the same code.~~ Done 2026-09-13 (commit `d152cd3`).
 
 **Wave 1 — close the P0 gap** *(prerequisite: User B account + token)*
 

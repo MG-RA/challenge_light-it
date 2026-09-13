@@ -1,6 +1,6 @@
 # Findings — prioritized bug list
 
-Updated 2026-09-13. Evidence comes from the API write run on 2026-09-12 and the API read, UI, DB and rate-limit runs on 2026-09-13. Each finding links the test cases that reproduce it; their latest results are in the [test-case matrix](../test-cases/README.md#traceability-matrix).
+Updated 2026-09-13. Evidence comes from one full run of every suite on 2026-09-13 against commit `d152cd3` (default, API writes, UI writes, rate limit); every write-path finding was reproduced again in that run, on new owned records. Each finding links the test cases that reproduce it; their latest results are in the [test-case matrix](../test-cases/README.md#traceability-matrix).
 
 The numbered list is the recommended triage order, highest priority first. **P1**: address first because a core operation loses or corrupts state. **P2**: schedule next for incorrect UI behavior, eligibility, contracts or a bounded security concern. **P3**: lower-impact response consistency or feedback. Priority is proposed fix order; severity is potential impact. No P0 blocker has been established. Existing finding IDs stay unchanged regardless of rank.
 
@@ -10,9 +10,9 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
 1. **F-18 — Payment reports success without storing a payment**
 
-   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 API/DB write run.
+   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 and 2026-09-13 API/DB write runs.
 
-   **Description / actual result:** HTTP 200 reports a payment ID, but no payment row appears for appointment 1137 during bounded reconciliation.
+   **Description / actual result:** HTTP 200 reports a payment ID, but no payment row appears for the appointment during bounded reconciliation (appointment 1137 on 2026-09-12, 1156 on 2026-09-13).
 
    **How to reproduce:** Create an owned unpaid appointment; submit a cash payment using the stored doctor fee; query linked payments.
 
@@ -26,9 +26,9 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
 2. **F-16 — Cancellation reports success but leaves the appointment active**
 
-   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 API/DB write run.
+   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 and 2026-09-13 API/DB write runs.
 
-   **Description / actual result:** HTTP 200; appointment 1126 remains active. The control comparison was not reached.
+   **Description / actual result:** HTTP 200; the target remains active (appointment 1126 on 2026-09-12, 1145 on 2026-09-13). The control comparison was not reached.
 
    **How to reproduce:** Create an owned appointment and a control; send PUT /api/appointments/{id}/cancel; poll the target row.
 
@@ -42,9 +42,9 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
 3. **F-03 — The same doctor, date and time can be booked twice**
 
-   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 sequential API/DB write run.
+   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 and 2026-09-13 sequential API/DB write runs.
 
-   **Description / actual result:** Second create returns 201 and persists another row (1134).
+   **Description / actual result:** Second create returns 201 and persists another row (1134 on 2026-09-12, 1153 on 2026-09-13).
 
    **How to reproduce:** Create an owned booking in a free slot; submit another booking for the same doctor/date/time with a separate marker.
 
@@ -58,9 +58,9 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
 4. **F-17 — Rescheduling accepts and stores an invalid date and time**
 
-   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 API/DB write run.
+   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 and 2026-09-13 API/DB write runs.
 
-   **Description / actual result:** HTTP 200; appointment 1135 changes from 2026-09-18 / 09:00 to 2026-09-11 / 25:99.
+   **Description / actual result:** HTTP 200; the appointment is overwritten with the invalid values (1135: 2026-09-18 / 09:00 → 2026-09-11 / 25:99 on 2026-09-12; 1154: 2026-09-24 / 09:30 → 2026-09-12 / 25:99 on 2026-09-13).
 
    **How to reproduce:** Create an owned appointment; reschedule it to yesterday with time_slot 25:99; compare the full DB row.
 
@@ -74,9 +74,9 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
 5. **F-12 — Booking accepts past dates; the UI also lacks past-date validation**
 
-   **Priority:** P1 · **Severity:** High · **Status:** API/DB reproduced 2026-09-12; UI reproduced 2026-09-13.
+   **Priority:** P1 · **Severity:** High · **Status:** API/DB reproduced 2026-09-12 and 2026-09-13; UI reproduced 2026-09-13.
 
-   **Description / actual result:** API returns 201 and stores both invalid booking dates (1129, 1130). UI date has no minimum; submitting the past date does not return focus to Date.
+   **Description / actual result:** API returns 201 and stores both invalid booking dates (1129, 1130 on 2026-09-12; 1148, 1149 on 2026-09-13). UI date has no minimum; submitting the past date does not return focus to Date.
 
    **How to reproduce:** Submit owned bookings for yesterday and 0123-11-23; separately fill the UI date with 2000-01-01 and submit with POST intercepted.
 
@@ -90,9 +90,9 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
 6. **F-02 — Booking stores an impossible clock value**
 
-   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 API/DB write run.
+   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 and 2026-09-13 API/DB write runs.
 
-   **Description / actual result:** HTTP 201; appointment 1131 stores 25:99.
+   **Description / actual result:** HTTP 201; the appointment stores 25:99 (1131 on 2026-09-12, 1150 on 2026-09-13).
 
    **How to reproduce:** Create a marked appointment with otherwise valid values and time_slot 25:99; read its DB row.
 
@@ -186,9 +186,9 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
 12. **F-04 — Booking accepts a doctor who is already inactive**
 
-   **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-12 API/DB write run.
+   **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-12 and 2026-09-13 API/DB write runs.
 
-   **Description / actual result:** HTTP 201; appointment 1132 persists against the inactive doctor.
+   **Description / actual result:** HTTP 201; the appointment persists against the inactive doctor (1132 on 2026-09-12, 1151 on 2026-09-13).
 
    **How to reproduce:** Select doctor 7 from the DB where is_active=false; submit an otherwise valid owned booking.
 
@@ -314,7 +314,7 @@ These retain their IDs for traceability. They are not confirmed functional bugs 
 
 ## Latest verified controls and remaining gaps
 
-Across all 85 automated cases, the latest recorded results are **64 passed, 4 expected failures, 16 failed and 1 skipped** ([per-case results](../test-cases/README.md#results-summary)). Every failure reproduces a finding above. The failure count is not the bug count: F-12 fails three cases, and F-15 and F-23 two each.
+Across all 85 automated cases, the full run of 2026-09-13 recorded **64 passed, 4 expected failures, 16 failed and 1 skipped** ([per-case results](../test-cases/README.md#results-summary)). Every failure reproduces a finding above. The failure count is not the bug count: F-12 fails three cases, and F-15 and F-23 two each.
 
 Completed and Cancelled counters update with controlled data after reload. Quick Actions, sidebar destinations, New Appointment, logout with Back/direct-route/reload checks, required fields, malformed email, availability failure/recovery, and simulated 429 feedback pass. DB connection/table access and write denial pass. The earlier point-in-time Upcoming match was insufficient: later change-based tests establish F-23.
 
