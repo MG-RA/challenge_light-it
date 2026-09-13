@@ -57,7 +57,7 @@
             "paths": [
               {
                 "name": "@playwright/test",
-                "message": "Import test/expect from src/fixtures (or tests/api/writes.ts) to keep the custom matchers.",
+                "message": "Import test/expect from src/fixtures (or extras/api-tests/writes.ts) to keep the custom matchers.",
                 "allowTypeImports": true
               }
             ]
@@ -68,7 +68,7 @@
           {
             "object": "page",
             "property": "route",
-            "message": "Use the apiMocks fixture (src/mocks/ApiMocks.ts) instead of page.route."
+            "message": "Tests drive the real app; do not stub the network with page.route in specs."
           }
         ]
       }

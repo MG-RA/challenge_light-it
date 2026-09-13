@@ -8,7 +8,7 @@ test.describe('HTTP caching', () => {
       {
         annotation: {
           type: 'issue',
-          description: 'F-14: Cache-Control is public (docs/FINDINGS.md)',
+          description: 'F-14: Cache-Control is public (extras/other-findings.md)',
         },
       },
       async ({ api }) => {

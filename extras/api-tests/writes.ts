@@ -24,7 +24,7 @@ export type Booked = Awaited<ReturnType<OwnedData['book']>>;
 /**
  * Owned test data for the `@mutating` API cases: every write carries a unique run
  * marker in `notes`, only marker-carrying rows are mutated, and teardown removes
- * whatever the test left. Verify the resulting state with tests/api/dbState.ts.
+ * whatever the test left. Verify the resulting state with extras/api-tests/dbState.ts.
  */
 export class OwnedData {
   private readonly created = new Map<number, string>();

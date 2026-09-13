@@ -1,5 +1,7 @@
 # Generated or supplied files keep their original bytes.
 package-lock.json
+# Postman exports are regenerated from the Postman app on every change.
+part-3-postman/*.json
 
 # Documentation tables are aligned by hand.
 *.md

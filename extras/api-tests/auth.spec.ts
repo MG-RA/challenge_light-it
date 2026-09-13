@@ -106,7 +106,7 @@ test.describe('Authorization boundaries', () => {
     {
       annotation: {
         type: 'issue',
-        description: 'F-20: edge firewall returns text/plain 403 (docs/FINDINGS.md)',
+        description: 'F-20: edge firewall returns text/plain 403 (extras/other-findings.md)',
       },
     },
     async ({ anonApi, token }) => {

@@ -13,7 +13,7 @@ const F15 = {
   annotation: {
     type: 'issue',
     description:
-      'F-15: appointment dates are UTC-midnight timestamps, not YYYY-MM-DD (docs/FINDINGS.md)',
+      'F-15: appointment dates are UTC-midnight timestamps, not YYYY-MM-DD (extras/other-findings.md)',
   },
 };
 

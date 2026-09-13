@@ -2,130 +2,95 @@
 
 [![Playwright](https://github.com/MG-RA/challenge_light-it/actions/workflows/playwright.yml/badge.svg?branch=main)](https://github.com/MG-RA/challenge_light-it/actions/workflows/playwright.yml)
 
-Playwright and TypeScript test suite for MedAppoint, covering the web UI, the REST API and the read-only Postgres database. API responses are validated against the supplied OpenAPI contract and reconciled with stored data; the database is the oracle. Tests that change remote data are opt-in.
+Deliverables for the Light-it QA challenge on MedAppoint, a patient appointment app. Everything is in English and runs against the challenge environment (web app, REST API and a read-only database).
 
-## At a glance
+## Deliverables
 
-- **Verdict: not release-ready.** Two P0 blockers: a payment reports success but is never stored (F-18), and a cancellation reports success but the appointment stays active (F-16). Both were reproduced twice against the database.
-- **16 confirmed bugs** — 2 P0, 4 P1, 8 P2, 2 P3 — plus one historical report awaiting re-verification. Next most urgent: double booking of the same slot (F-03), invalid dates and times accepted and stored (F-02, F-12, F-17).
-- **83 automated tests.** The 67 in the default suite pass in GitHub Actions ([latest run on `main`](https://github.com/MG-RA/challenge_light-it/actions/runs/34776679694)); 9 of them track 7 known bugs as expected failures, so any red run means something changed. 16 opt-in tests write owned, marked data to the shared environment and reproduce the write-path bugs; cleanup is verified in the DB.
-- **Run it:** `npm ci`, `npx playwright install chromium`, fill `.env` from `.env.example`, then `npm test`.
-
-## Start here
-
-| Document | What it contains |
-|---|---|
-| [Findings](docs/FINDINGS.md) | Prioritized bug list: reproduction steps, expected vs. actual, impact and evidence for each finding |
-| [Test cases](test-cases/README.md) | One written case per automated test: steps, expected results, related finding and latest result |
-| [QA plan](QA_PLAN.md) | Scope, risks, assertion policies, execution model, coverage gaps and roadmap |
-| [AI usage](AI_USAGE.md) | How AI was used, how its output was validated, and the mistakes it caught |
-| [Contributing](CONTRIBUTING.md) | Where code belongs, assertion and known-defect conventions, safe remote writes, time zones |
-
-## Current state
-
-**Automation:** 83 Playwright tests in 15 files. The default run executes 67; the other 16 write owned data to the shared environment and run only when explicitly enabled.
-
-**Latest results:** one full run of every suite on 2026-09-13 (default, API writes, UI writes, then the rate-limit check), with the default suite and the payment writes rerun after later changes on the same day:
-
-| Result | Cases |
-|---|---:|
-| Passed | 61 |
-| Expected failures (known defects marked `test.fail`) | 9 |
-| Failed, each reproducing a finding (opt-in write and rate-limit runs only) | 12 |
-| Skipped (no attributable notification) | 1 |
-
-**The default suite is green in GitHub Actions:** every defect it reproduces is an expected failure, so a red CI run always means something new — a regression, a changed defect signature, or a fix to confirm. Every failure reproduces a documented finding; there were no new failures, no unexpected passes, no retries and no suite errors. Write cleanup was verified: no marked rows remained and no payment residue was created. Per-run tallies and durations are in the [run record](test-cases/README.md#run-record); per-case results are in the [test-case matrix](test-cases/README.md#traceability-matrix).
-
-**Bugs requiring action** (full details in [FINDINGS.md](docs/FINDINGS.md)):
-
-| Priority | ID | Summary |
+| Part | Deliverable | Where |
 |---|---|---|
-| **P0** | F-18 | Payment reports success without storing a payment — **release blocker** |
-| **P0** | F-16 | Cancellation reports success but leaves the appointment active — **release blocker** |
-| P1 | F-03 | The same doctor, date and time can be booked twice |
-| P1 | F-17 | Rescheduling accepts and stores an invalid date and time |
-| P1 | F-12 | Booking accepts past dates; the UI has no past-date validation |
-| P1 | F-02 | Booking stores an impossible clock value (`25:99`) |
-| P2 | F-05 | An occupied appointment slot remains selectable |
-| P2 | F-21 | Next appointment card shows the wrong appointment |
-| P2 | F-23 | Upcoming appointments counter does not update |
-| P2 | F-22 | No login throttling within ten failed attempts |
-| P2 | F-04 | Booking accepts an inactive doctor |
-| P2 | F-24 | Payments accept zero and negative amounts with HTTP 200 |
-| P2 | F-15 | Appointment dates are timestamps, not the declared date-only format |
-| P2 | F-01 | Doctor list omits fee and active status |
-| P3 | F-14 | Patient-specific responses use public cache directives |
-| P3 | F-20 | Empty-signature tokens get an undocumented plain-text 403 |
+| 1. Functional testing | Report on *"reschedule an existing appointment"*: strategy, 25 executed test cases, 8 bugs and 6 improvements with evidence, and a **No-Go** recommendation | [part-1-functional-testing/](part-1-functional-testing/README.md) |
+| 2. SQL | The five queries, each with a comment | [part-2-sql/queries.sql](part-2-sql/queries.sql) |
+| 3. API testing | Postman collection for the reschedule flow, with an environment template | [part-3-postman/](part-3-postman/README.md) |
+| 4. UI automation | Three Playwright flows, described below | [tests/ui/](tests/ui) |
+| AI usage | How AI was used and how its output was validated | [AI_USAGE.md](AI_USAGE.md) |
+| Extras | API contract, authorization and database checks; findings outside the story | [extras/](extras/README.md) |
 
-FINDINGS.md also holds F-06 (profile save corrupts names: historical, awaiting re-verification with a disposable account) and UI feedback and open clarifications (F-07 to F-11, F-13, F-19).
+## Part 4 — UI automation
 
-## Setup
+### The three flows
 
-Requires Node 26+ (see `.nvmrc`).
+| Flow | What it proves | Test data |
+|---|---|---|
+| [Sign in and out](tests/ui/sign-in-and-out.spec.ts) | A wrong password is rejected; the right one opens this patient's dashboard; signing out clears the session and protected pages redirect to sign-in | None |
+| [Book an appointment](tests/ui/book-appointment.spec.ts) | The booking form stores exactly the chosen doctor, date and time, shows a confirmation, and the appointment appears in the list as active | Creates one appointment, deleted afterwards |
+| [Reschedule an appointment](tests/ui/reschedule-appointment.spec.ts) | The Part 1 user story: the same appointment moves to the new date and time and stays active, in the list and in the API | Creates one appointment, deleted afterwards |
+
+The reschedule spec also holds one clearly labelled **expected failure** for Part 1's BUG-04 (the card keeps the old date until the page is reloaded). It passes while the bug exists and fails once it is fixed, so the suite stays green without hiding the defect.
+
+### Run the tests from scratch
+
+Requirements: **Node.js 26** (see `.nvmrc`) and Git.
 
 ```bash
+git clone https://github.com/MG-RA/challenge_light-it.git
+cd challenge_light-it
 npm ci
 npx playwright install chromium
 cp .env.example .env
 ```
 
-On PowerShell, use `Copy-Item .env.example .env`. Fill in the challenge credentials and DB connection values. Variables already set in the environment take precedence over `.env`. `TEST_TIMEZONE` (default `UTC`) sets the one time zone used by both test date math and the browser, so results do not depend on the machine's clock zone.
+On Windows PowerShell, use `Copy-Item .env.example .env` for the last step. Then fill in `.env`:
 
-| Surface | Target | Playwright project |
+| Variable | Needed for | Value |
 |---|---|---|
-| UI | https://light-it-qa-challenge.vercel.app | `ui` (Chromium) |
-| API | https://qa-challenge-backend.vercel.app | `api` |
-| DB | Supabase Postgres, read-only account | no project of its own; the data oracle for the `api` and `ui` tests |
+| `BASE_URL` | Part 4 | `https://light-it-qa-challenge.vercel.app` (pre-filled) |
+| `API_BASE_URL` | Part 4 | `https://qa-challenge-backend.vercel.app` (pre-filled) |
+| `APP_USER_EMAIL`, `APP_USER_PASSWORD` | Part 4 | The challenge patient account |
+| `TEST_TIMEZONE` | Optional | Time zone for the browser and date math; defaults to `UTC` |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Extras only | Read-only database access |
 
-## Commands
+Run the flows:
 
 ```bash
-npm test                # default suite (no remote writes)
-npm run test:api
-npm run test:ui
-npm run test:list       # list tests without running them
-npm run typecheck
-npm run lint
-npm run format          # Prettier; CI runs format:check
-npm run report          # open the last HTML report
+npm test
 ```
 
-The `api` and `ui` projects share one API login from `tests/auth.setup.ts`. The same setup step downloads the OpenAPI contract from the login-protected API docs (`/api-docs.json`) into the git-ignored `.auth/openapi.json`, so the contract is never committed and every run validates against the currently published version; the setup test records its title, version and SHA-256 as an annotation.
+No manual steps are needed: a setup step signs in once through the API, and the flows reuse that session (except the sign-in flow, which starts signed out). Part 4 was verified to run with only the four Part 4 variables set.
 
-**Opt-in runs** (shared live environment, run one at a time):
+| Command | What it does |
+|---|---|
+| `npm test` | The three flows, headless |
+| `npm run test:headed` | The same, with a visible browser |
+| `npm run report` | Opens the HTML report of the last run |
+| `npm run test:extras` | The read-only extras (needs the database variables) |
+| `npm run typecheck`, `npm run lint`, `npm run format:check` | Static checks, also run in CI |
 
-- **API writes:** `RUN_MUTATING=1 npm run test:writes`
-- **UI writes:** `RUN_MUTATING=1 npx playwright test tests/ui/booking-state.spec.ts tests/ui/dashboard-state.spec.ts --project=ui --workers=1`
-- **Login rate limit:** `RUN_RATE_LIMIT=1 npx playwright test tests/api/rate-limit.spec.ts --project=api --no-deps --workers=1`. Sends at most ten failed logins; run it last.
+### How the flows are built
 
-How write tests stay safe on shared data:
+- **Page objects** ([src/pages](src/pages)) hold every locator and page action; specs read as the patient's steps. Locators prefer roles, labels and test ids.
+- **Fixtures** ([src/fixtures](src/fixtures)) provide the page objects, an authenticated API client and `testAppointments`.
+- **Test data through the API, cleaned up every time.** The booking and reschedule flows run on a shared environment, so every appointment they create carries a unique `qa-suite` note. After each test, `testAppointments` deletes every appointment with one of that test's notes and confirms each deletion with a 404, even if the test failed. The flows need no database access.
+- **Stable dates.** New slots are picked two to six months ahead, avoiding the patient's own appointments; the browser and date math share one time zone (`TEST_TIMEZONE`), so results do not depend on the machine's clock. In UTC−3 the app shows dates a day early (Part 1, BUG-03), which is why the default is UTC.
+- **Readable failures.** Tests are split into named steps, and every non-locator assertion says what it checks.
+- **Quality gates.** TypeScript strict mode, oxlint with the Playwright plugin (no raw locators, fixed waits or nested ternaries in specs), Prettier, and GitHub Actions on every push and pull request. CI records no traces or screenshots, because they would contain the session token.
 
-- `RUN_MUTATING` must be exactly `1`; other non-boolean values fail configuration. Write tests run on one worker with no retries, and the `owned` fixture refuses to start otherwise.
-- Every created appointment carries a unique run marker in `notes`. Only rows this run created and still owns may be rescheduled, cancelled, deleted or paid.
-- Teardown deletes every marked row and verifies its absence in the DB. An appointment kept by linked payments is cancelled instead and annotated as residue.
-- Caps: 20 booking and 4 payment submissions per worker process. A failed test restarts the worker and resets them, so they are not a run-wide budget.
-- A killed process can leave a marked row behind. Find it with `select id, notes from appointments where notes like 'qa-suite %'`.
+### CI
 
-## Structure
+[The workflow](.github/workflows/playwright.yml) runs type checking, lint, the format check, the three flows and the read-only extras. It reads the environment from repository secrets (`APP_USER_EMAIL`, `APP_USER_PASSWORD`, `DB_HOST`, `DB_USER`, `DB_PASSWORD`) and from repository variables or secrets (`BASE_URL`, `API_BASE_URL`, `DB_NAME`, `DB_PORT`). Variables are preferable for the non-secret values, because GitHub masks secret values as `***` in logs.
+
+## Repository structure
 
 ```text
-src/api/             API client, models, OpenAPI contract download and validation
-src/auth/            shared session and forged-token helpers
-src/config/          environment validation and write opt-in
-src/db/              parameterized DB lookups and bounded state observation
-src/fixtures/        test fixtures, custom matchers, redacted diagnostics
-src/mocks/           network stubs for UI tests that control backend answers
-src/pages/           page objects and the shared app shell (sidebar, page title)
-src/support/         calendar math in the suite time zone
-tests/api/           API read cases, opt-in writes, ownership and cleanup helpers
-tests/ui/            login, dashboard, navigation and booking
-test-cases/          written test cases, mirroring tests/
-docs/FINDINGS.md     prioritized defect register
-QA_PLAN.md           scope, risks, approach and roadmap
+part-1-functional-testing/  Part 1 report and evidence images
+part-2-sql/                 Part 2 queries
+part-3-postman/             Part 3 collection, environment template and notes
+tests/auth.setup.ts         signs in once through the API for the flows
+tests/ui/                   Part 4 flows
+src/pages/                  page objects
+src/fixtures/               fixtures, test data cleanup, custom matchers
+src/api/                    API client and OpenAPI contract validation (used by the extras)
+src/config/, src/support/   environment validation, date helpers
+extras/                     API checks and other findings
+AI_USAGE.md                 how AI was used
+CONTRIBUTING.md             conventions for changing the tests
 ```
-
-## Reports and CI
-
-HTML reports go to `playwright-report/`; JSON and JUnit results go to `test-results/`. GitHub Actions ([workflow](.github/workflows/playwright.yml)) runs type checking, lint, a Prettier format check and the default suite, on pushes to `main`, same-repository pull requests and manual dispatch. It hardcodes no targets. Credentials come from repository secrets `APP_USER_EMAIL`, `APP_USER_PASSWORD`, `DB_HOST`, `DB_USER` and `DB_PASSWORD`. `BASE_URL`, `API_BASE_URL`, `DB_NAME` and `DB_PORT` are read from a repository variable if one exists, otherwise from a secret of the same name; prefer variables for them, because GitHub masks secret values as `***` in logs, including URLs in failure output. An optional `TEST_TIMEZONE` variable overrides the default `UTC`. The first hosted runs passed on 2026-09-13, for [pull request #1](https://github.com/MG-RA/challenge_light-it/actions/runs/34776433354) and for the [merge to `main`](https://github.com/MG-RA/challenge_light-it/actions/runs/34776679694): 69 tests, 59 passed, 9 expected failures, 1 skipped, no retries (two DB connectivity checks have since been retired). Their logs and artifacts were checked and contain no credentials, tokens, traces or screenshots. Opt-in write and rate-limit results come from local runs; see the [run record](test-cases/README.md#run-record).
-
-Status diagnostics redact response bodies. In CI no traces, screenshots or videos are recorded, because traces carry the session token and artifacts of a public repository are downloadable; CI artifacts hold only reports and assertion messages. Local runs keep all three for failures and can contain account data, so review them before sharing; `.env`, `.auth/` and raw reports are git-ignored.
