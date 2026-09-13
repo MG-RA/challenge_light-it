@@ -1,5 +1,7 @@
 # Test strategy — MedAppoint QA challenge
 
+> Historical strategy, superseded by [QA_PLAN.md](QA_PLAN.md). Coverage and implementation statements below describe an older tree, including removed local tests. Use the [implemented case map](test-cases/README.md) and [latest default run](docs/runs/2026-09-13-default.md) for the submission.
+
 Updated 2026-09-11. This document separates delivered coverage from planned work. See [execution results](docs/EXECUTION.md), [app findings](docs/FINDINGS.md), and the [initial framework audit](docs/AUDIT.md).
 
 ## 1. Objective, scope, and evidence

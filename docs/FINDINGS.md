@@ -1,15 +1,15 @@
 # Findings — MedAppoint
 
-Updated 2026-09-11. Severity reflects potential impact; **evidence status** describes what was actually demonstrated. Fresh results come from the [execution record](EXECUTION.md). Historical observations below were already recorded before this cycle; their original observation timestamps were not captured and they were not all reproduced again.
+Updated 2026-09-13. Severity reflects potential impact; **evidence status** describes what was actually demonstrated. Current results come from the 2026-09-13 [default run](runs/2026-09-13-default.md) and 2026-09-12 [write run](runs/2026-09-12-writes.md); the 2026-09-11 [execution record](EXECUTION.md) is historical. Historical observations below were already recorded before this cycle; their original observation timestamps were not captured and they were not all reproduced again.
 
 The read-only cycle was followed by an isolated [state execution](STATE_EXECUTION.md). It created 14 owned appointments and removed all of them. One payment submission returned an ID without persistence and stopped further live scenarios. No profile or notification writes occurred; no residue was observed in the final independent check.
 
 | ID | Severity | Area | Summary | Evidence status |
 |---|---|---|---|---|
-| F-01 | Medium | API completeness | Doctor list omits fee and active fields returned by detail | Reproduced 2026-09-11; additional suite policy |
-| F-02 | High | Data integrity | Create accepts invalid clock value `25:99` | Controlled API/DB reproduction 2026-09-11 |
-| F-03 | High | Booking data | Sequential creation accepts a duplicate doctor/date/slot | Controlled API/DB reproduction 2026-09-11; concurrency deferred |
-| F-04 | Medium | Booking data | Create accepts a currently inactive doctor | Controlled API/DB reproduction 2026-09-11 |
+| F-01 | Medium | API completeness | Doctor list omits fee and active fields returned by detail | Reproduced 2026-09-11 and 2026-09-12; additional suite policy |
+| F-02 | High | Data integrity | Create accepts invalid clock value `25:99` | Controlled API/DB reproduction 2026-09-11, repeated 2026-09-12 |
+| F-03 | High | Booking data | Sequential creation accepts a duplicate doctor/date/slot | Controlled API/DB reproduction 2026-09-11, repeated 2026-09-12; concurrency deferred |
+| F-04 | Medium | Booking data | Create accepts a currently inactive doctor | Controlled API/DB reproduction 2026-09-11, repeated 2026-09-12 |
 | F-05 | Info | Availability | Slot list's date-specific meaning is unclear | Clarification needed; no root cause established |
 | F-06 | High | Profile | Recorded profile save merged last name and notes into first name | Historical manual reproduction + DB corroboration; not rerun |
 | F-07 | Info | Data plausibility | Notification timestamp was future-dated | Historical observation; fixture intent unknown |
@@ -17,14 +17,15 @@ The read-only cycle was followed by an isolated [state execution](STATE_EXECUTIO
 | F-09 | Info | Serialization | Equivalent numeric strings use different decimal formatting | Consistency observation; numeric comparisons now pass |
 | F-10 | Info | Serialization | Notification API uses `isRead`; DB uses `is_read` | Documented mapping; current reconciliation passes |
 | F-11 | Info | Validation | Nonnumeric doctor identifier returned 404 | Historical observation; no agreed 400 requirement |
-| F-12 | High | Booking | Create accepts yesterday and year 0123 | Controlled API/DB reproduction 2026-09-11 |
-| F-13 | Medium | Performance | Dashboard PNG body is 6.14 MiB | Reproduced 2026-09-11 |
-| F-14 | Low | HTTP/privacy | Profile and appointment responses use public cache directives | Reproduced 2026-09-11; no cross-user disclosure demonstrated |
-| F-15 | Medium | Contract | Appointment date is serialized as timestamp, contrary to `format: date` | Newly reproduced 2026-09-11 on list and detail |
-| F-16 | High | Cancellation | HTTP 200 leaves owned appointment active | Controlled API/DB reproduction 2026-09-11 |
-| F-17 | High | Rescheduling | Invalid date/time accepted and persisted | Controlled API/DB reproduction 2026-09-11 |
-| F-18 | High | Payments | HTTP 200 returns payment ID with no persisted row | Controlled API/DB reproduction 2026-09-11; safety stop |
+| F-12 | High | Booking | Create accepts yesterday and year 0123 | Controlled API/DB reproduction 2026-09-11, repeated 2026-09-12 |
+| F-13 | Medium | Performance | Dashboard PNG body is 6.14 MiB | Reproduced 2026-09-11 and 2026-09-12 |
+| F-14 | Low | HTTP/privacy | Profile and appointment responses use public cache directives | Reproduced 2026-09-11 and 2026-09-12; no cross-user disclosure demonstrated |
+| F-15 | Medium | Contract | Appointment date is serialized as timestamp, contrary to `format: date` | Reproduced 2026-09-11 and 2026-09-12 on list and detail |
+| F-16 | High | Cancellation | HTTP 200 leaves owned appointment active | Controlled API/DB reproduction 2026-09-11, repeated 2026-09-12 |
+| F-17 | High | Rescheduling | Invalid date/time accepted and persisted | Controlled API/DB reproduction 2026-09-11, repeated 2026-09-12 |
+| F-18 | High | Payments | HTTP 200 returns payment ID with no persisted row | Controlled API/DB reproduction 2026-09-11, repeated 2026-09-12; safety stop |
 | F-19 | Info | Booking UI | Reported availability does not load | Not reproduced: selected-doctor GET and displayed slots passed |
+| F-20 | Low | Auth/contract | Empty-signature token on `GET /users/me` gets edge-firewall `403 text/plain`, not documented 401 | Reproduced 2026-09-12; access denied, no disclosure |
 
 ## Reproduced in this cycle
 
@@ -170,6 +171,17 @@ The user reported that booking did not load availability from the endpoint. Read
 
 This does not reproduce the reported symptom on the checked path. It does not establish date-specific vacancy, recovery from failed requests, slow-network behavior, or every doctor/date combination. Keep F-05's catalog-versus-vacancy clarification separate. Next targeted checks are failed-response feedback and doctor switching with distinguishable controlled responses.
 
+### F-20 — Empty-signature token gets an undocumented edge 403
+
+- **Found:** new read-only authorization coverage on 2026-09-12.
+- **Reproduction:** take a valid session token, set its header to `{"alg":"none","typ":"JWT"}`, drop the signature (`header.payload.`), and call `GET /api/users/me`.
+- **Expected:** `401`, the only documented refusal for this operation.
+- **Actual:** `403`, `Content-Type: text/plain`, body `Forbidden` plus a request id, and `x-vercel-mitigated: deny`. The Vercel firewall answers before the API. Any empty signature triggers it, including an unchanged `HS256` header.
+- **Control:** the same `alg: none` header with the original signature kept reaches the API and gets `401 {"error":"Unauthorized"}`, as does a token whose `user_id` was changed to another patient. Access is denied in every variant; no profile data was returned.
+- **Impact:** clients that treat 401 as "session invalid, log in again" and parse JSON errors get a plain-text 403 instead. This is a contract and client-handling deviation, not a security bypass. The edge rule also hides whether the API itself rejects empty-signature tokens.
+- **Suggestion:** document 403 as a possible edge response, or have the firewall rule return a JSON 401. Confirm the API rejects unsigned tokens independently of the edge.
+- **Automation:** [auth tests](../tests/api/auth.spec.ts), `Authorization boundaries`. [`expectUnsignedTokenDenied`](../tests/api/knownDefectChecks.ts) requires the exact edge signature before the marker; any other status fails normally, and a 401 is an unexpected pass.
+
 All live state signatures above remain ordinary failed tests, not expected failures. See [state execution](STATE_EXECUTION.md) for timestamps, before/action/after evidence, and cleanup verification.
 
 ## Positive controls: current versus historical
@@ -177,6 +189,7 @@ All live state signatures above remain ordinary failed tests, not expected failu
 **Passed this cycle:**
 
 - Missing and malformed tokens rejected with 401 on all eight protected GET operations.
+- 2026-09-12: `GET /appointments/{id}` for another patient's appointment returned 403 with no appointment data; a token with an altered `user_id` claim and a signed `alg: none` token were rejected with 401 on `GET /users/me`.
 - Authenticated profile identity and selected fields agree with the DB; no top-level `password_hash` on that response.
 - Doctor list matches active DB records; detail fields and numeric fee agree.
 - Owned appointment list/detail agree with DB after the explicit F-15 date conversion.
@@ -187,7 +200,7 @@ All live state signatures above remain ordinary failed tests, not expected failu
 - Isolated create, valid reschedule, delete/detail-404, and missing-doctor rejection matched API/DB expectations.
 - Booking doctor selection loaded availability and displayed the returned time options; no submission occurred in that UI check.
 
-**Historical only, not reverified here:** one cross-user appointment GET returned 403; bcrypt password hashes were observed in storage; arbitrary-origin CORS access was not echoed; JWT lifetime was 24 hours. These do not establish complete authorization, CORS, or token-security coverage.
+**Historical only, not reverified here:** bcrypt password hashes were observed in storage; arbitrary-origin CORS access was not echoed; JWT lifetime was 24 hours. These do not establish complete authorization, CORS, or token-security coverage.
 
 ## Deferred verification
 

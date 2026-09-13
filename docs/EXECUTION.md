@@ -1,5 +1,7 @@
 # Execution record — 2026-09-11
 
+> Historical record of an older tree. Superseded by [the 2026-09-12 default run](runs/2026-09-12-default.md).
+
 ## Final default run
 
 Command: `npx playwright test`, configured **4 workers**, local **0 retries**, mutation flag unset. Started **2026-09-11 23:23:04 UTC** (20:23:04 America/Montevideo). Duration **11.7 seconds**. Windows, Node 26.8.2, npm 11.7.0, Chromium. Exit code **0**.

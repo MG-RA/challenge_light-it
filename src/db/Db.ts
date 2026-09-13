@@ -116,6 +116,14 @@ export class Db {
     );
   }
 
+  /** Any appointment belonging to someone else, for cross-patient authorization checks. */
+  otherPatientAppointment(patientId: number) {
+    return this.one<{ id: number; patient_id: number }>(
+      'select id, patient_id from appointments where patient_id <> $1 order by id limit 1',
+      [patientId],
+    );
+  }
+
   activeDoctors() {
     return this.query<DoctorRow>(
       'select id, first_name, last_name, specialty, consultation_fee, is_active, bio, avatar_url from doctors where is_active order by id',

@@ -224,16 +224,17 @@ Required: integer `appointment_id`, number `amount`, string enum `method`. Reque
 
 ## Existing automation and next additions
 
-Mapping is based on the current working tree. “Partial” means some assertions/variants already exist, not that the catalog row has fully passed. Historical run evidence remains in [EXECUTION.md](EXECUTION.md) and [STATE_EXECUTION.md](STATE_EXECUTION.md), recorded when the write cases ran as a separate suite; this design does not update those outcomes.
+Mapping is based on the current working tree. “Partial” means some assertions/variants already exist, not that the catalog row has fully passed. Current run evidence is in [docs/runs/](runs/2026-09-12-default.md) (2026-09-12); [EXECUTION.md](EXECUTION.md) and [STATE_EXECUTION.md](STATE_EXECUTION.md) are historical.
 
 | Design IDs / area | Existing source | Coverage and remaining work |
 |---|---|---|
 | AUTH-01/02; SEC-01 | [setup](../tests/auth.setup.ts), [auth](../tests/api/auth.spec.ts) | Valid setup, wrong password, missing/malformed token on eight protected GETs. Add explicit token schema/use case, unknown email, validation, expiry, and eight protected write gates. |
+| SEC-02 (partial); APT-14 | [auth](../tests/api/auth.spec.ts) `Authorization boundaries` | Read-only, no User B: another patient's appointment detail → 403 with no data (APT-14, passes); `GET /users/me` with an altered `user_id` claim and a signed `alg: none` header → 401 (pass); empty signature → edge 403 (F-20). Remaining SEC-02: expired tokens and the other 15 operations. |
 | AUTH-05/06/07 | None live | Controlled rate-limit and dedicated logout-session cases planned. |
 | USR-01; SEC-04 | [users](../tests/api/users.spec.ts), [caching](../tests/api/caching.spec.ts) | Own identity/no password hash; profile/appointment cache policy. Add controlled null/string fixtures and two-user isolation. |
 | USR-04/05/06 | None | No profile write automation. Blocked by the F-06 restoration prerequisite. |
 | DOC-01/02/04/05/07 | [doctors](../tests/api/doctors.spec.ts) | Active list, completeness, detail/fee, unknown detail, availability clock/uniqueness. Add unknown availability and controlled empty/inactive cases. |
-| APT-01/02/13 | [appointments](../tests/api/appointments.spec.ts) | Own list/detail/DB and separate raw-date expectations; second-user and missing-detail variants remain planned. Detail shape/date is suite policy, unlike list's declared schema. |
+| APT-01/02/13 | [appointments](../tests/api/appointments.spec.ts) | Own list/detail/DB and separate raw-date expectations; cross-patient detail read is covered under APT-14; missing-detail variant remains planned. Detail shape/date is suite policy, unlike list's declared schema. |
 | APT-04/05/07/08/09/10/16/19/22/25 | [appointment writes](../tests/api/appointments.spec.ts) | Partial: valid create, missing doctor only, two past dates, invalid clock, inactive doctor, sequential duplicate, cancel, reschedule, combined invalid reschedule, delete. Add each missing field, independent invalid variants, response-schema assertions, cross-user cases, concurrency, and boundaries. |
 | PAY-01/02 | [payments](../tests/api/payments.spec.ts) | Own list/DB/schema; controlled enum/null/empty fixtures and second-user setup remain planned. |
 | PAY-04/07/08 | [payment writes](../tests/api/payments.spec.ts) | Cash valid/zero/negative/duplicate steps implemented; only valid attempted in recorded run, F-18 stopped the rest. Other methods/validation/ownership planned. |

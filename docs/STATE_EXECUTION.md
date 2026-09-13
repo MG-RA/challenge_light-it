@@ -2,7 +2,7 @@
 
 Run ID: `eb1647b0-fd7a-4ec4-b372-1a977c63d694`.
 
-> Historical record. These scenarios have since moved into the `api` project as `@mutating` cases with the same assertions; the separate state configuration, `tests/state`, and the run registry no longer exist. See [write testing](WRITE_TESTING.md).
+> Historical record, superseded by [the 2026-09-12 write run](runs/2026-09-12-writes.md). These scenarios have since moved into the `api` project as `@mutating` cases with the same assertions; the separate state configuration, `tests/state`, and the run registry no longer exist. See [write testing](WRITE_TESTING.md).
 
 Command: `npm run test:state` with `RUN_MUTATING=1`, one worker, zero retries. Started **2026-09-11 23:08:29 UTC** (20:08:29 America/Montevideo). Duration **123.8 seconds**. Exit code **1**, because real failures remain visible.
 

@@ -25,8 +25,9 @@ Use only on the challenge account, with permission to create owned test data and
 - Every created appointment carries a cryptographically unique run marker in `notes`. Rows are found by marker, never by a returned ID alone.
 - Only a row that this test created **and** that still carries its marker for the configured patient may be rescheduled, cancelled, deleted or paid; anything else throws instead of mutating.
 - Rejected creates are also checked: a create that returns an error may still have written, so the marker is queried either way.
+- Create intent is retained in memory before the request. Teardown re-queries every attempted marker, including when the request or its initial DB read threw. This does not survive process termination or rule out writes after the bounded observation window.
 - Teardown deletes everything the test created and verifies absence in the DB. A failed cleanup fails the test; a DELETE is never retried.
-- If an appointment cannot be deleted because payments are linked to it, teardown cancels it instead and records a `residue` annotation on the test. Payments have no delete endpoint.
+- If an appointment cannot be deleted because payments are linked to it, teardown cancels it instead, verifies the stored cancellation, and records a `residue` annotation on the test. HTTP 200 without a stored cancellation fails cleanup. Payments have no delete endpoint.
 - Caps per worker process: **20 booking submissions** and **four payment submissions** on one owned appointment, ordered valid fee, zero, negative, duplicate.
 
 Compared with the removed state runner, there is no longer a durable pre-write intent registry, cross-run recovery, or `state-results/<run-id>/` summary. Reconciliation is per test, through DB reads in teardown. An interrupted run (killed process, machine loss) can therefore leave an owned marked appointment behind; the markers make it identifiable, and `select id, notes from appointments where notes like 'qa-suite %'` finds it.

@@ -13,6 +13,13 @@ export async function doctorCompletenessGaps(response: APIResponse) {
   return { doctors, gaps };
 }
 
+/** A 401 is the fix; any refusal other than the Vercel firewall's 403 is not F-20. */
+export function expectUnsignedTokenDenied(response: APIResponse) {
+  if (response.status() === 401) return;
+  expect(response.status(), 'unsigned token must be refused').toBe(403);
+  expect(response.headers()['x-vercel-mitigated'], 'known F-20 signature: denied at the edge, not by the API').toBe('deny');
+}
+
 export async function cacheHeaderForCheck(response: APIResponse, schema: 'User' | 'Appointment[]') {
   if (schema === 'Appointment[]') await readAppointments(response, 'list');
   else await expectCompleteJson(response, 200, schema);

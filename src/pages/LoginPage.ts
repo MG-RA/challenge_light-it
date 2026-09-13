@@ -9,8 +9,8 @@ export class LoginPage {
 
   constructor(private readonly page: Page) {
     this.heading = page.getByRole('heading', { name: 'MedAppoint' }).describe('Login heading');
-    this.emailInput = page.getByLabel('Email').describe('Email input');
-    this.passwordInput = page.getByLabel('Password').describe('Password input');
+    this.emailInput = page.locator('#email').describe('Email input');
+    this.passwordInput = page.locator('#password').describe('Password input');
     this.submitButton = page.getByRole('button', { name: 'Sign In' }).describe('Sign In button');
     this.errorMessage = page.getByText('Invalid email or password', { exact: false }).describe('Login rejection feedback');
   }

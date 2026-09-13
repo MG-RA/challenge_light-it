@@ -27,6 +27,7 @@ export type Booked = Awaited<ReturnType<OwnedData['book']>>;
  */
 export class OwnedData {
   private readonly created = new Map<number, string>();
+  private readonly attemptedMarkers = new Set<string>();
 
   constructor(
     private readonly api: ApiClient,
@@ -62,6 +63,8 @@ export class OwnedData {
     if (++bookingSubmissions > BOOKING_CAP) throw new Error(`Booking submission cap (${BOOKING_CAP}) reached`);
     const marker = `${runMarker} ${randomUUID()}`;
     const payload = { ...body, notes: marker };
+    // Retain intent before the request: a timeout can happen after the server commits.
+    this.attemptedMarkers.add(marker);
     const response = await this.api.createAppointment(payload);
     // A rejected create can still have written, so look for the marker either way.
     const rows = await observe(() => this.db.markedAppointments(marker, this.ownerId), () => true);
@@ -127,6 +130,15 @@ export class OwnedData {
   async cleanup(): Promise<string[]> {
     const failures: string[] = [];
     const residue: string[] = [];
+    // Recover rows even when the request or its initial DB observation threw.
+    for (const marker of this.attemptedMarkers) {
+      try {
+        const rows = await observe(() => this.db.markedAppointments(marker, this.ownerId), () => true);
+        for (const row of rows) this.created.set(row.id, marker);
+      } catch {
+        failures.push('could not reconcile an attempted create; marked rows may remain');
+      }
+    }
     for (const [id, marker] of this.created) {
       try {
         const row = await this.db.stateAppointment(id, this.ownerId);
@@ -140,12 +152,15 @@ export class OwnedData {
         if (payments.length === 0) throw new Error(`survived DELETE (HTTP ${response.status()})`);
         const cancellation = await this.api.cancelAppointment(id);
         if (cancellation.status() !== 200) throw new Error('linked payments blocked deletion and cancellation failed');
+        await observe(() => this.db.stateAppointment(id, this.ownerId),
+          (r) => r?.notes === marker && r.status === 'cancelled');
         residue.push(`appointment ${id} kept and cancelled; ${payments.length} linked payment(s) blocked deletion`);
       } catch (error) {
         failures.push(`appointment ${id}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
     this.created.clear();
+    this.attemptedMarkers.clear();
     if (failures.length) throw new Error(`Cleanup left owned test data behind: ${failures.join('; ')}`);
     return residue;
   }
