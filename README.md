@@ -18,6 +18,7 @@ Playwright and TypeScript test suite for MedAppoint, covering the web UI, the RE
 | [Findings](docs/FINDINGS.md) | Prioritized bug list: reproduction steps, expected vs. actual, impact and evidence for each finding |
 | [Test cases](test-cases/README.md) | One written case per automated test: steps, expected results, related finding and latest result |
 | [QA plan](QA_PLAN.md) | Scope, risks, assertion policies, execution model, coverage gaps and roadmap |
+| [AI usage](AI_USAGE.md) | How AI was used, how its output was validated, and the mistakes it caught |
 | [Contributing](CONTRIBUTING.md) | Where code belongs, assertion and known-defect conventions, safe remote writes, time zones |
 
 ## Current state

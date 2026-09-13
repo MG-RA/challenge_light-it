@@ -1,0 +1,24 @@
+{
+  "name": "MedAppoint - Configure locally",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "https://qa-challenge-backend.vercel.app",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "username",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "password",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}
