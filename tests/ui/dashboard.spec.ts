@@ -12,13 +12,11 @@ test.describe('Dashboard', () => {
     ['History', '/appointments', 'Appointments'],
     ['Alerts', '/notifications', 'Notifications'],
   ] as const) {
-    test(`Quick Actions opens ${label}`, async ({ page, dashboardPage }) => {
+    test(`Quick Actions opens ${label}`, async ({ page, dashboardPage, appShell }) => {
       await dashboardPage.goto();
       await dashboardPage.quickAction(label).click();
       await expect(page).toHaveURL(new RegExp(`${path}$`));
-      await expect(
-        page.getByRole('main').getByRole('heading', { name: heading, level: 1 }),
-      ).toBeVisible();
+      await expect(appShell.pageTitle(heading)).toBeVisible();
     });
   }
   // Point-in-time only for counters proven to follow data (TC-UI-DASH-014/015). The Upcoming variant was
@@ -71,13 +69,15 @@ test.describe('Dashboard', () => {
       );
     },
   );
-  test('next appointment View all opens appointment history', async ({ page, dashboardPage }) => {
+  test('next appointment View all opens appointment history', async ({
+    page,
+    dashboardPage,
+    appShell,
+  }) => {
     await dashboardPage.goto();
     await dashboardPage.viewAllAppointments.click();
     await expect(page).toHaveURL(/\/appointments$/);
-    await expect(
-      page.getByRole('main').getByRole('heading', { name: 'Appointments', level: 1 }),
-    ).toBeVisible();
+    await expect(appShell.pageTitle('Appointments')).toBeVisible();
   });
 });
 

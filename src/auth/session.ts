@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import type { Page } from '@playwright/test';
 import { env } from '../config/env';
 
 const AUTH_DIR = path.resolve(__dirname, '../../.auth');
@@ -21,6 +22,18 @@ export function saveSession(token: string): void {
       ],
     }),
   );
+}
+
+/** The JWT the SPA keeps in `localStorage.token`, or null when signed out. */
+export function storedToken(page: Page): Promise<string | null> {
+  return page.evaluate(() => localStorage.getItem('token'));
+}
+
+/** Drops the browser session (cookies and stored token) so the page starts signed out. */
+export async function signOutBrowser(page: Page): Promise<void> {
+  await page.context().clearCookies();
+  await page.goto('/login');
+  await page.evaluate(() => localStorage.clear());
 }
 
 export function loadToken(): string {

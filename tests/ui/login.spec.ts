@@ -15,12 +15,14 @@ test.describe('Login page', () => {
     credentials,
   }) => {
     await loginPage.login(credentials.email, credentials.password);
+
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(dashboardPage.greeting).toBeVisible();
   });
 
   test('invalid password keeps the user on /login', async ({ page, loginPage, credentials }) => {
     const response = await loginPage.loginAndWaitForResponse(credentials.email, 'definitely-wrong');
+
     expect(response.status()).toBe(401);
     await expect(loginPage.errorMessage).toBeVisible();
     await expect(loginPage.submitButton).toBeEnabled();
@@ -35,26 +37,29 @@ test.describe('Access control', () => {
   });
 });
 
-for (const scenario of ['missing email', 'missing password', 'malformed email'] as const) {
+const invalidLogins = [
+  { scenario: 'missing email', email: '', password: 'deliberately-invalid', invalid: 'emailInput' },
+  { scenario: 'missing password', email: 'qa@example.com', password: '', invalid: 'passwordInput' },
+  {
+    scenario: 'malformed email',
+    email: 'invalid',
+    password: 'deliberately-invalid',
+    invalid: 'emailInput',
+  },
+] as const;
+
+for (const { scenario, email, password, invalid } of invalidLogins) {
   test(`login validates ${scenario} before submitting`, async ({ page, loginPage }) => {
     let requests = 0;
     await page.route('**/api/auth/login', async (route) => {
       requests++;
       await route.fulfill({ status: 400, json: { error: 'Unexpected submission' } });
     });
+
     await loginPage.goto();
-    await loginPage.emailInput.fill(
-      scenario === 'missing email'
-        ? ''
-        : scenario === 'malformed email'
-          ? 'invalid'
-          : 'qa@example.com',
-    );
-    await loginPage.passwordInput.fill(
-      scenario === 'missing password' ? '' : 'deliberately-invalid',
-    );
-    await loginPage.submitButton.click();
-    const field = scenario === 'missing password' ? loginPage.passwordInput : loginPage.emailInput;
+    await loginPage.login(email, password);
+
+    const field = loginPage[invalid];
     await expect(field).toBeFocused();
     expect(await field.evaluate((input: HTMLInputElement) => input.validity.valid)).toBe(false);
     expect(requests).toBe(0);
@@ -70,8 +75,10 @@ test('login shows actionable feedback for throttling', async ({ page, loginPage 
       json: { error: 'Too many requests. Try again in 60 seconds.' },
     }),
   );
+
   await loginPage.goto();
   await loginPage.login('qa@example.com', 'deliberately-invalid');
-  await expect(page.getByText(/too many|try again in|wait.*seconds/i)).toBeVisible();
+
+  await expect(loginPage.throttleMessage).toBeVisible();
   await expect(page).toHaveURL(/\/login$/);
 });

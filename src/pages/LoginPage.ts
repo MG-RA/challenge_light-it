@@ -5,6 +5,7 @@ export class LoginPage {
   readonly passwordInput: Locator;
   readonly submitButton: Locator;
   readonly errorMessage: Locator;
+  readonly throttleMessage: Locator;
 
   constructor(private readonly page: Page) {
     this.emailInput = page.locator('#email').describe('Email input');
@@ -13,6 +14,9 @@ export class LoginPage {
     this.errorMessage = page
       .getByText('Invalid email or password', { exact: false })
       .describe('Login rejection feedback');
+    this.throttleMessage = page
+      .getByText(/too many|try again in|wait.*seconds/i)
+      .describe('Login throttling feedback');
   }
 
   async goto(): Promise<void> {

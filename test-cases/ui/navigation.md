@@ -4,9 +4,9 @@ Spec: [tests/ui/navigation.spec.ts](../../tests/ui/navigation.spec.ts) · Projec
 
 **Starting state:** the browser is authenticated with the token saved by TC-SETUP-001.
 
-**Page objects:** [Sidebar](../../src/pages/components/Sidebar.ts) finds links by a name ending with the section label. The destination headings are [DoctorsPage](../../src/pages/DoctorsPage.ts), [AppointmentsPage](../../src/pages/AppointmentsPage.ts) and [NotificationsPage](../../src/pages/NotificationsPage.ts). Each heading is an `h1` in `main` whose name matches the section, case-insensitive.
+**Page objects:** [Sidebar](../../src/pages/components/Sidebar.ts) finds links by a name ending with the section label. Destination headings come from `pageTitle(name)` on [AppShell](../../src/pages/components/AppShell.ts) (the `appShell` fixture): an `h1` in `main` whose name contains the section, case-insensitive.
 
-TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:8](../../tests/ui/navigation.spec.ts:8).
+TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:5](../../tests/ui/navigation.spec.ts:5).
 
 | Shared field | Value |
 |---|---|
@@ -21,7 +21,7 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:8](../../tests/ui/
 
 | Field | Value |
 |---|---|
-| Automated test | [navigation.spec.ts:9](../../tests/ui/navigation.spec.ts:9) › `Sidebar destinations › opens Doctors with its page heading` |
+| Automated test | [navigation.spec.ts:6](../../tests/ui/navigation.spec.ts:6) › `Sidebar destinations › opens Doctors with its page heading` |
 | Project / tag | ui / — |
 
 | # | Action | Expected result |
@@ -34,7 +34,7 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:8](../../tests/ui/
 
 | Field | Value |
 |---|---|
-| Automated test | [navigation.spec.ts:9](../../tests/ui/navigation.spec.ts:9) › `Sidebar destinations › opens Appointments with its page heading` |
+| Automated test | [navigation.spec.ts:6](../../tests/ui/navigation.spec.ts:6) › `Sidebar destinations › opens Appointments with its page heading` |
 | Project / tag | ui / — |
 
 | # | Action | Expected result |
@@ -47,7 +47,7 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:8](../../tests/ui/
 
 | Field | Value |
 |---|---|
-| Automated test | [navigation.spec.ts:9](../../tests/ui/navigation.spec.ts:9) › `Sidebar destinations › opens Notifications with its page heading` |
+| Automated test | [navigation.spec.ts:6](../../tests/ui/navigation.spec.ts:6) › `Sidebar destinations › opens Notifications with its page heading` |
 | Project / tag | ui / — |
 
 | # | Action | Expected result |
@@ -62,7 +62,7 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:8](../../tests/ui/
 
 | Field | Value |
 |---|---|
-| Automated test | [navigation.spec.ts:23](../../tests/ui/navigation.spec.ts:23) › `Sidebar destinations › returns to Dashboard from Doctors` |
+| Automated test | [navigation.spec.ts:15](../../tests/ui/navigation.spec.ts:15) › `Sidebar destinations › returns to Dashboard from Doctors` |
 | Project / tag | ui / — |
 
 | # | Action | Expected result |
@@ -78,7 +78,7 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:8](../../tests/ui/
 
 | Field | Value |
 |---|---|
-| Automated test | [navigation.spec.ts:33](../../tests/ui/navigation.spec.ts:33) › `sidebar logout clears the session and protects routes after reload and back` |
+| Automated test | [navigation.spec.ts:27](../../tests/ui/navigation.spec.ts:27) › `sidebar logout clears the session and protects routes after reload and back` |
 | Project / tag | ui / — |
 | Type | Security, session handling |
 | Priority | P0 |
@@ -89,8 +89,8 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:8](../../tests/ui/
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | Clear cookies and `localStorage`, open `/login` and log in with the configured credentials. | The URL ends with `/dashboard`. |
-| 2 | Click the sidebar **Logout** button. | The URL ends with `/login`, and `localStorage.token` is `null`. |
+| 1 | `signOutBrowser` clears cookies and `localStorage`; open `/login` and log in with the configured credentials. | The URL ends with `/dashboard`. |
+| 2 | Click the sidebar **Logout** button. | The URL ends with `/login`, and `storedToken(page)` (`localStorage.token`) is `null`. |
 | 3 | Go back in browser history. | The URL still ends with `/login`. |
 | 4 | Navigate directly to `/appointments`. | Redirected; the URL ends with `/login`. |
 | 5 | Reload. | **Sign In** is visible. |
@@ -103,7 +103,7 @@ TC-UI-NAV-001…003 come from the loop at [navigation.spec.ts:8](../../tests/ui/
 
 | Field | Value |
 |---|---|
-| Automated test | [navigation.spec.ts:57](../../tests/ui/navigation.spec.ts:57) › `sidebar New Appointment opens booking form` |
+| Automated test | [navigation.spec.ts:54](../../tests/ui/navigation.spec.ts:54) › `sidebar New Appointment opens booking form` |
 | Project / tag | ui / — |
 | Type | Functional, navigation |
 | Priority | P1 |

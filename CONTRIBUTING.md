@@ -16,7 +16,7 @@ Before pushing: `npm run format && npm run typecheck && npm run lint && npm test
 | Contract | `src/api/contract.ts` + `docs/openapi.json` | Validators compiled from the supplied spec. Never edit the spec or hand-write schemas in tests. |
 | DB oracle | `src/db/Db.ts` | Named, parameterized lookups. No SQL in spec files. |
 | Fixtures | `src/fixtures/` | `test` and `expect` with the custom matchers. |
-| Page objects | `src/pages/` | Locators only, no assertions. Prefer test ids and roles; keep any structural lookup inside the page object with a comment saying why. |
+| Page objects | `src/pages/` | Readonly locators plus actions (`fill`, `login`, `chooseDoctor`), no assertions. Prefer test ids and roles; keep any id, CSS or structural lookup inside the page object. Shared layout (sidebar, page title) is `AppShell`. Specs get page objects from fixtures (`appShell`, `loginPage`, `dashboardPage`, `bookingPage`), not `new`. |
 | Specs | `tests/api`, `tests/ui` | Assertions live here. |
 
 Import `test` and `expect` from `src/fixtures` (or from `tests/api/writes.ts` when a test needs the
