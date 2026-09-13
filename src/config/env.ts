@@ -22,10 +22,21 @@ function port(name: string, fallback: number): number {
   return value;
 }
 
+function timezone(name: string, fallback: string): string {
+  const value = process.env[name] || fallback;
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: value });
+  } catch {
+    throw new Error(`Env var "${name}" must be an IANA time zone such as UTC or America/Montevideo, got "${value}"`);
+  }
+  return value;
+}
+
 export const env = {
   baseUrl: required('BASE_URL'),
   apiBaseUrl: required('API_BASE_URL'),
-  swaggerUrl: process.env.SWAGGER_URL,
+  /** One zone for Node date math and the browser, so "today" and "upcoming" agree on every machine. */
+  timezone: timezone('TEST_TIMEZONE', 'UTC'),
 
   // Credential sections are validated on first access, not at import, so each
   // layer only needs its own secrets (e.g. `npm run test:db` works without app creds).
@@ -33,7 +44,6 @@ export const env = {
     return {
       email: required('APP_USER_EMAIL'),
       password: required('APP_USER_PASSWORD'),
-      alias: process.env.APP_USER_ALIAS,
     };
   },
 
@@ -47,3 +57,7 @@ export const env = {
     };
   },
 };
+
+// Local Date fields in the config process and every worker use the suite zone; the browser gets
+// the same zone through `timezoneId` in playwright.config.ts.
+process.env.TZ = env.timezone;

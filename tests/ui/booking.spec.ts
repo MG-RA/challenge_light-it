@@ -1,5 +1,6 @@
 import { test, expect } from '../../src/fixtures';
 import { BookingPage } from '../../src/pages/BookingPage';
+import { dateAfter } from '../../src/support/dates';
 
 test('booking loads the selected doctor availability into time options without submitting', async ({ page, db }) => {
   const doctors = (await db.activeDoctors()).slice(0, 2);
@@ -9,9 +10,7 @@ test('booking loads the selected doctor availability into time options without s
     ? route.continue() : route.abort());
   const booking = new BookingPage(page);
   await booking.goto();
-  const tomorrow = new Date();
-  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-  await booking.date.fill(tomorrow.toISOString().slice(0, 10));
+  await booking.date.fill(dateAfter(1));
   for (const doctor of doctors) {
     const pending = page.waitForResponse((response) =>
       new URL(response.url()).pathname === `/api/doctors/${doctor.id}/availability`
@@ -39,7 +38,8 @@ for (const missing of ['doctor_id', 'appointment_date', 'time_slot'] as const) {
     const booking = new BookingPage(page);
     await booking.goto();
     if (missing !== 'doctor_id') await booking.doctor.selectOption({ index: 1 });
-    if (missing !== 'appointment_date') await booking.date.fill('2026-12-20');
+    // A relative future date stays valid once the form gains a minimum date (F-12 fix).
+    if (missing !== 'appointment_date') await booking.date.fill(dateAfter(30));
     if (missing !== 'time_slot' && missing !== 'doctor_id') await page.locator('#time_slot').selectOption('09:00');
     await page.getByTestId('submit-appointment').click();
     const field = page.locator(`#${missing}`);

@@ -31,6 +31,8 @@ export default defineConfig<TestOptions>({
 
   use: {
     baseURL: env.baseUrl,
+    // Same zone as Node date math (env.ts pins process.env.TZ), so the app and the oracle agree on "today".
+    timezoneId: env.timezone,
     // Traces hold the bearer and localStorage token, and screenshots/videos show account data.
     // CI artifacts on a public repository are downloadable, so keep them local-only.
     trace: process.env.CI ? 'off' : 'retain-on-failure',

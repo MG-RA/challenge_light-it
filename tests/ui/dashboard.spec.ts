@@ -1,4 +1,5 @@
 import { test, expect } from '../../src/fixtures';
+import { appointmentStart, dateAfter, isUpcoming } from '../../src/support/dates';
 
 test.describe('Dashboard', () => {
   test('greets the user by first name from the DB', async ({ dashboardPage, testUser }) => {
@@ -20,11 +21,8 @@ test.describe('Dashboard', () => {
   for (const status of ['upcoming', 'completed', 'cancelled'] as const) {
     test(`${status} count reflects patient records`, async ({ page, dashboardPage, db, testUser }) => {
       const rows = await db.appointmentsForPatient(testUser.id);
-      const now = new Date();
-      // Proposed rule: future active/pending records in the browser's local timezone.
-      const count = rows.filter((row) => status === 'upcoming'
-        ? ['active', 'pending'].includes(row.status) && new Date(`${row.appointment_date}T${row.time_slot}`) >= now
-        : row.status === status).length;
+      // Proposed rule: future active/pending records in the suite time zone, which the browser shares.
+      const count = rows.filter((row) => status === 'upcoming' ? isUpcoming(row) : row.status === status).length;
       await dashboardPage.goto();
       const label = status === 'upcoming' ? 'Upcoming appointments' : status === 'completed' ? 'Completed' : 'Cancelled';
       const card = page.getByText(label, { exact: true }).locator('../..');
@@ -36,8 +34,8 @@ test.describe('Dashboard', () => {
     async ({ page, dashboardPage, db, testUser }) => {
       const now = new Date();
       const rows = (await db.appointmentsForPatient(testUser.id))
-        .filter((row) => ['active', 'pending'].includes(row.status) && new Date(`${row.appointment_date}T${row.time_slot}`) >= now)
-        .sort((a, b) => `${a.appointment_date}T${a.time_slot}`.localeCompare(`${b.appointment_date}T${b.time_slot}`) || a.id - b.id);
+        .filter((row) => isUpcoming(row, now))
+        .sort((a, b) => appointmentStart(a).getTime() - appointmentStart(b).getTime() || a.id - b.id);
       await dashboardPage.goto();
       const panel = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Your next appointment' }) });
       const next = rows[0];
@@ -72,8 +70,8 @@ for (const [label, expected, finding] of [
     : {};
   test(`dashboard ${label} counter updates when appointment data changes`, details, async ({ page, dashboardPage, testUser }) => {
     // Controlled responses isolate UI aggregation from backend lifecycle defects.
-    const future = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
-    const past = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    const future = dateAfter(7);
+    const past = dateAfter(-7);
     let populated = false;
     let reads = 0;
     const statuses = ['active', 'pending', 'completed', 'cancelled', 'cancelled', 'active'];

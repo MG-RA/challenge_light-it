@@ -5,7 +5,8 @@ import {
   expectNothingStored,
   expectStoredAppointment,
 } from './dbState';
-import { dateAfter, test, expect } from './writes';
+import { dateAfter } from '../../src/support/dates';
+import { test, expect } from './writes';
 
 // F-15 is marked after the ownership and DB reconciliation checks, so a regression in those still fails.
 const F15 = { annotation: { type: 'issue', description: 'F-15: appointment dates are UTC-midnight timestamps, not YYYY-MM-DD (docs/FINDINGS.md)' } };

@@ -134,6 +134,10 @@ impossible dates still fail. The published schema is not modified.
 - **Teardown deletes what the test created and verifies absence.** A DELETE is never retried. A paid
   appointment that cannot be deleted is cancelled and annotated as residue.
 - **Config:** `.env` from `.env.example`; secrets never committed; `.auth/` git-ignored.
+- **One time zone per run:** `TEST_TIMEZONE` (default `UTC`, as in CI) drives both Node date math
+  and the browser's `timezoneId`, so "today", "yesterday" and "upcoming" mean the same thing to the
+  app and to the oracle on any machine. It is a test setting, not the product's time zone, which is
+  still unconfirmed (§12 Q4). All calendar math goes through `src/support/dates.ts`.
 
 ## 6. Execution model
 

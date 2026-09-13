@@ -58,7 +58,7 @@ npx playwright install chromium
 cp .env.example .env
 ```
 
-On PowerShell, use `Copy-Item .env.example .env`. Fill in the challenge credentials and DB connection values. Variables already set in the environment take precedence over `.env`.
+On PowerShell, use `Copy-Item .env.example .env`. Fill in the challenge credentials and DB connection values. Variables already set in the environment take precedence over `.env`. `TEST_TIMEZONE` (default `UTC`) sets the one time zone used by both test date math and the browser, so results do not depend on the machine's clock zone.
 
 | Surface | Target | Playwright project |
 |---|---|---|

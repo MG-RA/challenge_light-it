@@ -5,6 +5,7 @@ import { mutationsEnabled } from '../../src/config/mutations';
 import type { Db, DoctorRow, StateAppointmentRow } from '../../src/db/Db';
 import { observe } from '../../src/db/observe';
 import { test as base, expect } from '../../src/fixtures';
+import { dateAfter } from '../../src/support/dates';
 
 /** Bookings and payments this worker may submit; mutating runs use a single worker. */
 const BOOKING_CAP = 20;
@@ -12,10 +13,6 @@ const PAYMENT_CAP = 4;
 const runMarker = `qa-suite ${randomUUID()}`;
 let bookingSubmissions = 0;
 let paymentSubmissions = 0;
-
-export function dateAfter(days: number): string {
-  return new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
-}
 
 type Slot = { doctor: DoctorRow; body: CreateAppointmentRequest };
 export type Booked = Awaited<ReturnType<OwnedData['book']>>;
