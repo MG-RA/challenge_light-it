@@ -2,6 +2,13 @@
 
 Playwright and TypeScript test suite for MedAppoint, covering the web UI, the REST API and the read-only Postgres database. API responses are validated against the supplied OpenAPI contract and reconciled with stored data; the database is the oracle. Tests that change remote data are opt-in.
 
+## At a glance
+
+- **Verdict: not release-ready.** Two P0 blockers: a payment reports success but is never stored (F-18), and a cancellation reports success but the appointment stays active (F-16). Both were reproduced twice against the database.
+- **15 confirmed bugs** — 2 P0, 4 P1, 7 P2, 2 P3 — plus one historical report awaiting re-verification. Next most urgent: double booking of the same slot (F-03), invalid dates and times accepted and stored (F-02, F-12, F-17).
+- **85 automated tests.** The 70 in the default suite pass in CI mode (verified locally with `CI=1`); 9 of them track 7 known bugs as expected failures, so any red run means something changed. 15 opt-in tests write owned, marked data to the shared environment and reproduce the write-path bugs; cleanup is verified in the DB.
+- **Run it:** `npm ci`, `npx playwright install chromium`, fill `.env` from `.env.example`, then `npm test`.
+
 ## Start here
 
 | Document | What it contains |
@@ -29,13 +36,12 @@ Playwright and TypeScript test suite for MedAppoint, covering the web UI, the RE
 
 | Priority | ID | Summary |
 |---|---|---|
-| P1 | F-18 | Payment reports success without storing a payment |
-| P1 | F-16 | Cancellation reports success but leaves the appointment active |
+| **P0** | F-18 | Payment reports success without storing a payment — **release blocker** |
+| **P0** | F-16 | Cancellation reports success but leaves the appointment active — **release blocker** |
 | P1 | F-03 | The same doctor, date and time can be booked twice |
 | P1 | F-17 | Rescheduling accepts and stores an invalid date and time |
 | P1 | F-12 | Booking accepts past dates; the UI has no past-date validation |
 | P1 | F-02 | Booking stores an impossible clock value (`25:99`) |
-| P1 | F-06 | Profile save merges surname and notes into the first name (historical) |
 | P2 | F-05 | An occupied appointment slot remains selectable |
 | P2 | F-21 | Next appointment card shows the wrong appointment |
 | P2 | F-23 | Upcoming appointments counter does not update |
@@ -46,7 +52,7 @@ Playwright and TypeScript test suite for MedAppoint, covering the web UI, the RE
 | P3 | F-14 | Patient-specific responses use public cache directives |
 | P3 | F-20 | Empty-signature tokens get an undocumented plain-text 403 |
 
-FINDINGS.md also records UI feedback and open clarifications (F-07 to F-11, F-13, F-19).
+FINDINGS.md also holds F-06 (profile save corrupts names: historical, awaiting re-verification with a disposable account) and UI feedback and open clarifications (F-07 to F-11, F-13, F-19).
 
 ## Setup
 

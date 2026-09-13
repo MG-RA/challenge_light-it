@@ -2,7 +2,9 @@
 
 Updated 2026-09-13. Evidence comes from one full run of every suite on 2026-09-13 against commit `d152cd3` (default, API writes, UI writes, rate limit); every write-path finding was reproduced again in that run, on new owned records. Each finding links the test cases that reproduce it; their latest results are in the [test-case matrix](../test-cases/README.md#traceability-matrix).
 
-The numbered list is the recommended triage order, highest priority first. **P1**: address first because a core operation loses or corrupts state. **P2**: schedule next for incorrect UI behavior, eligibility, contracts or a bounded security concern. **P3**: lower-impact response consistency or feedback. Priority is proposed fix order; severity is potential impact. No P0 blocker has been established. Existing finding IDs stay unchanged regardless of rank.
+The numbered list is the recommended triage order, highest priority first. **P0 — release blocker**: a demonstrated patient-isolation breach (risk R1) or a write that reports success without persisting (R2), per the [release gates](../QA_PLAN.md#7-entry-and-exit-criteria); P0 means the same here, in the risk register and in the test cases. **P1**: fix next because a core operation stores invalid or conflicting state. **P2**: incorrect UI behavior, eligibility, contracts or a bounded security concern. **P3**: lower-impact response consistency or feedback. Priority is fix order; severity is potential impact. Existing finding IDs stay unchanged regardless of rank.
+
+**Release status: blocked** by two P0 defects, F-18 and F-16. Both were reproduced on 2026-09-12 and again on 2026-09-13 with owned records and DB verification.
 
 Evidence status is explicit: a historical report or unconfirmed policy is not presented as a freshly reproduced defect. All live owned records created during the cited runs were cleaned up; payment follow-on probes stopped when valid payment persistence failed.
 
@@ -10,7 +12,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
 1. **F-18 — Payment reports success without storing a payment**
 
-   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 and 2026-09-13 API/DB write runs.
+   **Priority:** P0, release blocker (R2) · **Severity:** Critical · **Status:** Reproduced: 2026-09-12 and 2026-09-13 API/DB write runs.
 
    **Description / actual result:** HTTP 200 reports a payment ID, but no payment row appears for the appointment during bounded reconciliation (appointment 1137 on 2026-09-12, 1156 on 2026-09-13).
 
@@ -26,7 +28,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
 2. **F-16 — Cancellation reports success but leaves the appointment active**
 
-   **Priority:** P1 · **Severity:** High · **Status:** Reproduced: 2026-09-12 and 2026-09-13 API/DB write runs.
+   **Priority:** P0, release blocker (R2) · **Severity:** Critical · **Status:** Reproduced: 2026-09-12 and 2026-09-13 API/DB write runs.
 
    **Description / actual result:** HTTP 200; the target remains active (appointment 1126 on 2026-09-12, 1145 on 2026-09-13). The control comparison was not reached.
 
@@ -104,23 +106,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Evidence / coverage:** [TC-APT-012](../test-cases/api/appointments.md).
 
-7. **F-06 — Profile save merges surname and notes into the first name**
-
-   **Priority:** P1 · **Severity:** High · **Status:** Historical manual reproduction with DB corroboration; not rerun.
-
-   **Description / actual result:** Recorded HTTP 200 changed first_name to Proud Phoenix test, emptied last_name and retained notes=test. A later save failed because last_name was required.
-
-   **How to reproduce:** The recorded save submitted the tester’s assigned first name, last name and notes as separate fields. Do not reuse that alias for another account.
-
-   **Expected result:** Preserve the assigned name fields and store notes independently.
-
-   **Impact:** Corrupts profile names, can expose notes in greetings, and can prevent subsequent saves.
-
-   **Recommended action / limits:** Reverify with a disposable account or reliable reset before changing another profile. The documented alias-mismatch 403 is intentional.
-
-   **Evidence / coverage:** Historical manual reproduction only. No automated case exists: profile writes stay disabled until a disposable account or reliable reset is available (see the [QA plan](../QA_PLAN.md#2-scope)).
-
-8. **F-05 — An occupied appointment slot remains selectable**
+7. **F-05 — An occupied appointment slot remains selectable**
 
    **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-13 owned-booking UI/DB check.
 
@@ -136,7 +122,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Evidence / coverage:** [TC-UI-BOOK-008](../test-cases/ui/booking.md).
 
-9. **F-21 — Next appointment shows a different record from the earliest eligible appointment**
+8. **F-21 — Next appointment shows a different record from the earliest eligible appointment**
 
    **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-13 UI/DB check.
 
@@ -152,7 +138,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Evidence / coverage:** [TC-UI-DASH-011](../test-cases/ui/dashboard.md).
 
-10. **F-23 — Upcoming appointments counter stays at 3 when data changes**
+9. **F-23 — Upcoming appointments counter stays at 3 when data changes**
 
    **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-13 controlled UI and real API/DB state checks.
 
@@ -168,7 +154,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Evidence / coverage:** [TC-UI-DASH-013/016](../test-cases/ui/dashboard.md).
 
-11. **F-22 — No login throttling observed within ten failed attempts**
+10. **F-22 — No login throttling observed within ten failed attempts**
 
    **Priority:** P2 · **Severity:** Medium · **Status:** Bounded observation: 2026-09-13; enforcement policy unconfirmed.
 
@@ -184,7 +170,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Evidence / coverage:** [TC-AUTH-RATE-001](../test-cases/api/rate-limit.md).
 
-12. **F-04 — Booking accepts a doctor who is already inactive**
+11. **F-04 — Booking accepts a doctor who is already inactive**
 
    **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-12 and 2026-09-13 API/DB write runs.
 
@@ -200,7 +186,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Evidence / coverage:** [TC-APT-013](../test-cases/api/appointments.md).
 
-13. **F-15 — Appointment dates are timestamps instead of the declared date-only format**
+12. **F-15 — Appointment dates are timestamps instead of the declared date-only format**
 
    **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-13 consolidated API list/detail checks.
 
@@ -216,7 +202,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Evidence / coverage:** [Appointment cases](../test-cases/api/appointments.md).
 
-14. **F-01 — Doctor list omits fees and active status returned by detail**
+13. **F-01 — Doctor list omits fees and active status returned by detail**
 
    **Priority:** P2 · **Severity:** Medium · **Status:** Reproduced: 2026-09-13 default run; suite completeness policy.
 
@@ -232,7 +218,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Evidence / coverage:** [Doctor cases](../test-cases/api/doctors.md).
 
-15. **F-14 — Patient-specific responses use public cache directives**
+14. **F-14 — Patient-specific responses use public cache directives**
 
    **Priority:** P3 · **Severity:** Low · **Status:** Reproduced: 2026-09-13 default run; no cross-user disclosure demonstrated.
 
@@ -248,7 +234,7 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
 
    **Evidence / coverage:** [Caching cases](../test-cases/api/caching.md).
 
-16. **F-20 — Empty-signature tokens receive an undocumented plain-text 403**
+15. **F-20 — Empty-signature tokens receive an undocumented plain-text 403**
 
    **Priority:** P3 · **Severity:** Low · **Status:** Reproduced: 2026-09-13 default run.
 
@@ -263,6 +249,26 @@ Evidence status is explicit: a historical report or unconfirmed policy is not pr
    **Recommended action / limits:** Document the edge response or align it with the API response; independently verify unsigned-token rejection at the API. Other altered-token controls returned 401.
 
    **Evidence / coverage:** [Auth cases](../test-cases/api/auth.md).
+
+## Needs re-verification
+
+Recorded with DB corroboration before the automated suite existed, but not reproduced since. It keeps its severity so it is not lost, and stays out of the confirmed list above until a controlled rerun confirms it.
+
+16. **F-06 — Profile save merges surname and notes into the first name**
+
+   **Priority:** re-verify before fixing (P1 if reproduced) · **Severity:** High · **Status:** Historical manual reproduction with DB corroboration; not rerun.
+
+   **Description / actual result:** Recorded HTTP 200 changed first_name to Proud Phoenix test, emptied last_name and retained notes=test. A later save failed because last_name was required.
+
+   **How to reproduce:** The recorded save submitted the tester’s assigned first name, last name and notes as separate fields. Do not reuse that alias for another account.
+
+   **Expected result:** Preserve the assigned name fields and store notes independently.
+
+   **Impact:** Corrupts profile names, can expose notes in greetings, and can prevent subsequent saves.
+
+   **Recommended action / limits:** Reverify with a disposable account or reliable reset before changing another profile. The documented alias-mismatch 403 is intentional.
+
+   **Evidence / coverage:** Historical manual reproduction only. No automated case exists: profile writes stay disabled until a disposable account or reliable reset is available (see the [QA plan](../QA_PLAN.md#2-scope)).
 
 ## UI feedback and observations
 

@@ -45,8 +45,8 @@ Priorities drive test order and release gates. Status reflects the repo as of 20
 
 | # | Risk | Priority | Current coverage | Status |
 |---|---|---|---|---|
-| R1 | One patient can read or modify another's records | **P0** | Own-record reconciliation vs DB; missing/malformed token on 8 protected GETs; cross-patient appointment read (403); altered `user_id`, `alg:none` and empty-signature tokens on profile | **Partial** — cross-user writes and list isolation need User B; F-20 open (edge 403) |
-| R2 | A write reports success but does not persist | **P0** | Write cases assert the stored row after every write | **Failing** — F-16 cancel, F-18 payment |
+| R1 | One patient can read or modify another's records | **P0** | Own-record reconciliation vs DB; missing/malformed token on 8 protected GETs; cross-patient appointment read (403); altered `user_id`, `alg:none` and empty-signature tokens on profile | **Partial** — no breach found; cross-user writes and list isolation need User B; F-20 open (edge 403, access still denied) |
+| R2 | A write reports success but does not persist | **P0** | Write cases assert the stored row after every write | **Failing, release-blocking** — F-16 cancel, F-18 payment (P0) |
 | R3 | Invalid bookings are accepted and stored | **P0** | API: past date, invalid clock, inactive doctor, duplicate slot, invalid reschedule. UI: past-date validation, occupied-slot selection | **Failing** — F-02, F-03, F-04, F-05, F-12, F-17; Q-tier, not yet a gate (pending §12 Q1–4) |
 | R4 | Payment integrity (amount, ownership, duplication) | P1 | Valid step only; zero/negative/duplicate implemented but not reached | **Blocked** — the valid payment fails first (F-18) |
 | R5 | Authentication weaknesses (expiry, logout, rate limit) | P1 | API login failure; bounded failed-login probe; UI login, field validation, 429 feedback and logout | **Failing** — F-22 no throttle within ten attempts; token expiry and server-side revocation untested |
@@ -185,8 +185,12 @@ installed, `.env` populated, prior run's residue confirmed cleaned.
 
 **Release gates** — what QA blocks on, as opposed to reports:
 
-- Any open **C- or P-tier** defect under R1 or R2 blocks release.
-- Any C-tier contract failure on a documented status or required field blocks release.
+- Any open **C- or P-tier** defect that realizes R1 or R2 — a demonstrated cross-patient read or
+  write, or a write that reports success without persisting — blocks release. These are **P0** in
+  FINDINGS. **Currently blocked by F-18 and F-16.**
+- Any C-tier contract failure on a documented **success** response (its status or a required field)
+  blocks release. Deviations on refusal paths that still deny access are reported at their severity:
+  F-20 returns an undocumented 403 instead of 401 but grants nothing, so it is P3, not a blocker.
 - Q-tier expectations do **not** block until the business rule is agreed and promoted. This includes
   the R3 validation defects (F-02, F-03, F-04, F-12, F-17): they are reported at their severity, and
   they become blocking once §12 questions 1–3 are answered and the rule is promoted to C or P.

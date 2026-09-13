@@ -35,7 +35,7 @@ Every case has:
 - **ID:** `TC-<AREA>-<NNN>`. IDs are stable: append new ones, never renumber or reuse. Retired: TC-APT-003/004 (folded into TC-APT-001/002) and TC-UI-DASH-002/003 (covered by navigation; image size kept as F-13 feedback).
 - **Automated test:** spec file and line, plus the exact Playwright title so `--grep` finds it.
 - **Project / tag:** Playwright project (`setup`, `api`, `db`, `ui`), plus `@mutating` when the test writes remote data.
-- **Priority / basis:** **P0** patient isolation and booking/payment integrity, **P1** core behavior and contract, **P2** secondary behavior. **C** means the OpenAPI contract specifies it, **P** is suite policy (DB reconciliation, field completeness), **Q** is a proposed business rule not in the spec; Q expectations are soft assertions.
+- **Priority / basis:** **P0** patient isolation and booking/payment integrity, **P1** core behavior and contract, **P2** secondary behavior. A case's priority is how important its coverage is; a finding's priority in [FINDINGS.md](../docs/FINDINGS.md) is fix order. P0 lines up in both: P0 cases guard the risks whose defects are P0 release blockers. **C** means the OpenAPI contract specifies it, **P** is suite policy (DB reconciliation, field completeness), **Q** is a proposed business rule not in the spec; Q expectations are soft assertions.
 - **Finding:** the related [FINDINGS.md](../docs/FINDINGS.md) ID, if any.
 - **Preconditions, test data, steps with expected results, cleanup.**
 - **Last recorded:** the latest result and its date.
